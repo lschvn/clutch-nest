@@ -17,7 +17,6 @@ import { TwoFactorEmailListenerService } from './two-factor-email-listener.servi
   ],
   providers: [TwoFactorAuthService, TwoFactorEmailListenerService], // Added TwoFactorEmailListenerService
   controllers: [TwoFactorAuthController],
-  // TwoFactorAuthService is not exported as per current requirements
-  // exports: [TwoFactorAuthService],
+  exports: [TwoFactorAuthService], // Export TwoFactorAuthService so AuthModule can use it
 })
 export class TwoFactorAuthModule {}

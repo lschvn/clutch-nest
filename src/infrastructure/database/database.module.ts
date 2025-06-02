@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Analytics } from 'src/infrastructure/analytics/entities/analytics.entity';
 import { User } from 'src/core/users/entities/user.entity';
+import { Session } from 'src/core/auth/session/entities/session.entity'
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { User } from 'src/core/users/entities/user.entity';
         username: configService.get('DATABASE_USER', 'clutch'),
         password: configService.get('DATABASE_PASSWORD', 'clutch'),
         database: configService.get('DATABASE_NAME', 'clutch'),
-        entities: [Analytics, User],
+        entities: [Analytics, User, Session],
         synchronize: true,
       }),
     }),

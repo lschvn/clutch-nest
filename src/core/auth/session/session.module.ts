@@ -4,7 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { Session } from './entities/session.entity';
 import { User } from '../../users/entities/user.entity';
 import { SessionService } from './session.service';
-import { SessionController } from './session.controller.ts';
+import { SessionController } from './session.controller';
 // Assuming jwtConstants.secret is available, otherwise use a placeholder or ConfigService
 // For simplicity, using a placeholder value. In a real app, this should be from config.
 // const jwtConstants = { secret: 'yourSecretKey' }; // Example, replace with actual config

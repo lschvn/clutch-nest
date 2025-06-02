@@ -25,8 +25,8 @@ export class User {
   @Column({ default: false })
   isTwoFactorAuthenticationEnabled: boolean;
 
-  @Column({ nullable: true })
-  twoFactorAuthenticationSecret?: string;
+  @Column({ type: 'text', nullable: true })
+  twoFactorAuthenticationSecret: string | null;
 
   @Column({ default: new Date() })
   created_at: Date;

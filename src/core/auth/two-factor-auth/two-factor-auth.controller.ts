@@ -37,7 +37,7 @@ interface AuthenticatedRequest extends Request {
   user: User; // Or a more specific User DTO
 }
 
-@ApiTags('Auth Two Factor')
+@ApiTags('Two-Factor Authentication')
 @ApiBearerAuth()
 @Controller('auth/2fa')
 @UseGuards(AuthGuard)
@@ -61,11 +61,47 @@ export class TwoFactorAuthController {
    * @throws {BadRequestException} If 2FA is not enabled for the user.
    * @throws {UnauthorizedException} If the provided `twoFactorAuthenticationCode` is invalid.
    */
-  @ApiOperation({ summary: 'Authenticate with 2FA code after successful primary login' })
+  @ApiOperation({ 
+    summary: 'Complete 2FA authentication after primary login',
+    description: `This endpoint completes the two-factor authentication flow after a successful primary login.
+
+**Flow Overview:**
+1. User provides email/password to /auth/login
+2. If 2FA is enabled, login returns { twoFactorRequired: true, userId: "..." }
+3. System sends 2FA code via email to user
+4. User receives email with 6-digit code
+5. Frontend calls this endpoint with userId and 2FA code
+6. If valid, returns sessionToken for authenticated requests
+
+**Usage:**
+- Only call this after receiving twoFactorRequired: true from /auth/login
+- The 2FA code is sent automatically via email when 2FA is required
+- Codes expire after a short time for security (typically 5-10 minutes)
+- Session token should be stored securely and used for subsequent API calls`
+  })
   @ApiBody({ type: LoginTwoFactorDto })
-  @ApiResponse({ status: 200, description: 'User successfully authenticated with 2FA, session created.' })
-  @ApiUnauthorizedResponse({ description: 'Invalid 2FA code or user not found.' })
-  @ApiNotFoundResponse({ description: 'User not found.'})
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Two-factor authentication successful. Returns session token and user information.',
+    schema: {
+      type: 'object',
+      properties: {
+        sessionToken: { type: 'string', description: 'JWT session token for authenticated requests' },
+        user: {
+          type: 'object',
+          properties: {
+            id: { type: 'number', description: 'User ID' },
+            email: { type: 'string', description: 'User email address' },
+            name: { type: 'string', description: 'User display name' },
+            role: { type: 'string', description: 'User role (user/admin)' },
+            verified: { type: 'boolean', description: 'Email verification status' }
+          }
+        }
+      }
+    }
+  })
+  @ApiUnauthorizedResponse({ description: 'Invalid or expired 2FA code provided.' })
+  @ApiNotFoundResponse({ description: 'User ID not found or 2FA not enabled for this user.' })
   // @BadRequestException('2FA not enabled for this user or other bad request.') // Removed this as it's handled in logic
   @HttpCode(HttpStatus.OK)
   @Post('authenticate')
@@ -126,11 +162,41 @@ export class TwoFactorAuthController {
    * @param response - The Express response object, used to send the OTP Auth URL.
    */
   @Post('generate')
-  @ApiOperation({ summary: 'Generate a new QR code secret for authenticator app 2FA' })
+  @ApiOperation({ 
+    summary: 'Generate QR code for authenticator app setup',
+    description: `Generates a new secret and QR code URL for setting up authenticator app-based 2FA.
+
+**Setup Flow:**
+1. User calls this endpoint while authenticated
+2. Backend generates a temporary 2FA secret (valid for 5 minutes)
+3. Returns otpauthUrl that frontend converts to QR code
+4. User scans QR code with authenticator app (Google Authenticator, Authy, etc.)
+5. User enters 6-digit code from app to /auth/2fa/turn-on to complete setup
+
+**Frontend Implementation:**
+- Use a QR code library to convert otpauthUrl to scannable QR code
+- Display instructions for users to scan with their authenticator app
+- Provide manual setup option by showing the secret key
+- Guide user to next step: entering code to enable 2FA
+
+**Security Notes:**
+- Secret expires in 5 minutes if not verified
+- User must complete setup with turn-on endpoint to activate 2FA
+- Old secrets are invalidated when new ones are generated`
+  })
   @ApiResponse({
     status: 200,
-    description: 'Returns OTP Auth URL. Client should generate QR code.',
-    schema: { type: 'object', properties: { otpauthUrl: { type: 'string' } } },
+    description: 'QR code generation successful. Use otpauthUrl to create QR code for user to scan.',
+    schema: { 
+      type: 'object', 
+      properties: { 
+        otpauthUrl: { 
+          type: 'string',
+          description: 'OTP Auth URL to be converted into QR code by frontend',
+          example: 'otpauth://totp/YourApp:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=YourApp'
+        } 
+      } 
+    },
   })
   async generateSecret(
     @Request() req: AuthenticatedRequest, // Requires AuthGuard to populate req.user
@@ -161,17 +227,50 @@ export class TwoFactorAuthController {
    * @throws {BadRequestException} If the secret has expired or the code is invalid.
    */
   @Post('turn-on')
-  @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Turn on authenticator app 2FA by verifying the generated code',
+    summary: 'Enable 2FA by verifying authenticator app code',
+    description: `Completes 2FA setup by verifying the code from user's authenticator app.
+
+**Activation Flow:**
+1. User must have called /auth/2fa/generate first
+2. User scanned QR code with authenticator app
+3. User enters 6-digit code from their authenticator app
+4. This endpoint validates the code and permanently enables 2FA
+5. User's account is now protected with two-factor authentication
+
+**Frontend Considerations:**
+- Only enable this call after user has scanned QR code
+- Provide clear instructions about entering the 6-digit code
+- Handle validation errors gracefully (expired codes, invalid format)
+- Show success message when 2FA is enabled
+- Redirect to security settings or account overview
+
+**Post-Activation:**
+- All future logins will require 2FA via email codes
+- User can disable 2FA using the turn-off endpoint
+- Backup codes should be generated and displayed (if implemented)`
   })
   @ApiBody({ type: TwoFactorAuthenticationCodeDto })
-  @ApiResponse({ status: 200, description: 'Authenticator app 2FA successfully enabled.' })
+  @ApiResponse({ 
+    status: 200, 
+    description: '2FA successfully enabled for user account.',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { 
+          type: 'string', 
+          example: 'Two-factor authentication has been enabled successfully.' 
+        }
+      }
+    }
+  })
   @ApiResponse({
     status: 400,
-    description: 'Invalid 2FA code or secret expired.',
+    description: 'Invalid authenticator code or setup session expired. User must restart from /generate.',
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized (user not found or issue with user session).'})
+  @ApiResponse({ status: 401, description: 'User session invalid. Re-authentication required.'})
+  @HttpCode(HttpStatus.OK)
+  @Post('turn-on')
   async turnOnTwoFactorAuthentication(
     @Request() req: AuthenticatedRequest, // Requires AuthGuard
     @Body() { twoFactorAuthenticationCode }: TwoFactorAuthenticationCodeDto,
@@ -219,15 +318,51 @@ export class TwoFactorAuthController {
    * @throws {BadRequestException} If 2FA is not enabled or the code is invalid.
    */
   @Post('turn-off')
-  @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Turn off authenticator app 2FA by verifying a current code',
+    summary: 'Disable 2FA with authenticator verification',
+    description: `Disables two-factor authentication after verifying current authenticator code.
+
+**Deactivation Flow:**
+1. User must be authenticated and have 2FA currently enabled
+2. User opens their authenticator app for the current 6-digit code
+3. User submits the current code to verify they still have access
+4. System validates code and disables 2FA protection
+5. Account returns to single-factor authentication (password only)
+
+**Security Considerations:**
+- Requires valid authenticator code to prevent unauthorized disabling
+- Consider requiring additional verification (password re-entry)
+- Log this security event for audit purposes
+- Notify user via email about 2FA being disabled
+
+**Frontend Implementation:**
+- Warn user about reduced security when disabling 2FA
+- Clearly explain they need their authenticator app
+- Provide option to re-enable 2FA easily
+- Show confirmation message after successful disabling`
   })
   @ApiBody({ type: TwoFactorAuthenticationCodeDto })
-  @ApiResponse({ status: 200, description: 'Authenticator app 2FA successfully disabled.' })
-  @ApiResponse({ status: 400, description: 'Invalid 2FA code.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.'})
-  @ApiResponse({ status: 404, description: 'User not found.'})
+  @ApiResponse({ 
+    status: 200, 
+    description: '2FA successfully disabled for user account.',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { 
+          type: 'string', 
+          example: 'Two-factor authentication has been disabled successfully.' 
+        }
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Invalid authenticator code or 2FA not currently enabled for this account.' 
+  })
+  @ApiResponse({ status: 401, description: 'User session invalid. Re-authentication required.'})
+  @ApiResponse({ status: 404, description: 'User account not found.'})
+  @HttpCode(HttpStatus.OK)
+  @Post('turn-off')
   async turnOffTwoFactorAuthentication(
     @Request() req: AuthenticatedRequest, // Requires AuthGuard
     @Body() { twoFactorAuthenticationCode }: TwoFactorAuthenticationCodeDto,
