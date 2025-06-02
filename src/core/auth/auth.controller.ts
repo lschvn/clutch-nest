@@ -23,7 +23,7 @@ import { CreateUserDto } from '../users/dto/create-user.dto';
 import { AuthGuard } from './auth.guard';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AuthentificatedRequest } from 'express'; // This might need to be actual express.Request if AuthenticatedRequest is not globally defined
-import { UsersService } from 'src/core/users/users.service';
+import { UsersService } from '../users/users.service';
 import { ConfigService } from '@nestjs/config'; // Import ConfigService
 import { SessionService } from './session/session.service'; // Added
 import { BadRequestException, UnauthorizedException } from '@nestjs/common'; // Added for new endpoint
