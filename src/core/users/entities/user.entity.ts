@@ -22,6 +22,12 @@ export class User {
   @Column({ default: 'user', type: 'enum', enum: ['user', 'admin'] })
   role: string;
 
+  @Column({ default: false })
+  isTwoFactorAuthenticationEnabled: boolean;
+
+  @Column({ nullable: true })
+  twoFactorAuthenticationSecret?: string;
+
   @Column({ default: new Date() })
   created_at: Date;
 
