@@ -61,11 +61,14 @@ export class TwoFactorAuthService {
 
     // Store the hashed code in cache for 5 minutes (300000 ms)
     await this.cacheManager.set(`2fa_login_code:${userId}`, hashedCode, 300000);
-    
+
     return code; // Return the plain code for emailing
   }
 
-  async verifyEmailLoginCode(userId: number, providedCode: string): Promise<boolean> {
+  async verifyEmailLoginCode(
+    userId: number,
+    providedCode: string,
+  ): Promise<boolean> {
     const cacheKey = `2fa_login_code:${userId}`;
     const cachedHashedCode = await this.cacheManager.get<string>(cacheKey);
 

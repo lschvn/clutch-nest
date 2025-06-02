@@ -35,7 +35,9 @@ describe('AnalyticsService', () => {
     }).compile();
 
     service = module.get<AnalyticsService>(AnalyticsService);
-    repository = module.get<Repository<Analytics>>(getRepositoryToken(Analytics));
+    repository = module.get<Repository<Analytics>>(
+      getRepositoryToken(Analytics),
+    );
   });
 
   it('should be defined', () => {

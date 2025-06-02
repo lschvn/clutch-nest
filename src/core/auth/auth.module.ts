@@ -18,7 +18,7 @@ import { TwoFactorAuthModule } from './two-factor-auth/two-factor-auth.module'; 
       signOptions: { expiresIn: '20d' },
     }),
     UsersModule,
-    CacheModule.register(), 
+    CacheModule.register(),
     SessionModule, // So AuthService can inject SessionService
     TwoFactorAuthModule, // So AuthService can inject TwoFactorAuthService & handlers
   ],

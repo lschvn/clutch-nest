@@ -17,7 +17,12 @@ export class AuthService {
     private readonly twoFactorAuthService: TwoFactorAuthService, // Injected TwoFactorAuthService
     private readonly eventEmitter: EventEmitter2, // Injected EventEmitter2
   ) {}
-  async signIn(email: string, password: string, ipAddress?: string, userAgent?: string) {
+  async signIn(
+    email: string,
+    password: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
     const user = await this.usersService.getByEmail(email);
     // It's important that getByEmail fetches all necessary fields, including isTwoFactorAuthenticationEnabled and role
     if (!user) {
@@ -35,7 +40,8 @@ export class AuthService {
 
     if (user.isTwoFactorAuthenticationEnabled) {
       // User has 2FA enabled, generate email code and signal client.
-      const emailCode = await this.twoFactorAuthService.generateAndCacheEmailLoginCode(user.id);
+      const emailCode =
+        await this.twoFactorAuthService.generateAndCacheEmailLoginCode(user.id);
       this.eventEmitter.emit('auth.2fa.send_login_code', {
         email: user.email,
         name: user.name,
@@ -70,7 +76,13 @@ export class AuthService {
     };
   }
 
-  async signUp(name: string, email: string, password: string, ipAddress?: string, userAgent?: string) {
+  async signUp(
+    name: string,
+    email: string,
+    password: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
     // Create the user
     const userEntity = await this.usersService.create({
       name,

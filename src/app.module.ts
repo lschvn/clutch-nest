@@ -12,10 +12,12 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ([{
-        ttl: configService.get('THROTTLE_TTL', 60) * 1000,
-        limit: configService.get('THROTTLE_LIMIT', 100),
-      }]),
+      useFactory: (configService: ConfigService) => [
+        {
+          ttl: configService.get('THROTTLE_TTL', 60) * 1000,
+          limit: configService.get('THROTTLE_LIMIT', 100),
+        },
+      ],
     }),
     ConfigModule.forRoot(),
     CacheModule.register(),
@@ -25,14 +27,14 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
   ],
   controllers: [],
   providers: [
-      {
-        provide: APP_INTERCEPTOR,
-        useClass: CacheInterceptor,
-      },
-      {
-        provide: APP_GUARD,
-        useClass: ThrottlerGuard,
-      },
-    ],
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: CacheInterceptor,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

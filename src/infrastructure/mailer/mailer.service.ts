@@ -3,10 +3,9 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { MailerService as MailerProvider } from '@nestjs-modules/mailer';
 import { EventPayloads } from './types';
 
-
 @Injectable()
 export class MailerService {
-    constructor(private readonly mailerProvider: MailerProvider) {}
+  constructor(private readonly mailerProvider: MailerProvider) {}
 
   @OnEvent('user.welcome')
   async welcomeEmail(data: EventPayloads['user.welcome']) {

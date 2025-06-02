@@ -18,6 +18,9 @@ export class LoginTwoFactorDto {
   })
   @IsString()
   @IsNotEmpty()
-  @Length(6, 6, { message: 'Two-factor authentication code must be exactly 6 characters long.' })
+  @Length(6, 6, {
+    message:
+      'Two-factor authentication code must be exactly 6 characters long.',
+  })
   twoFactorAuthenticationCode: string;
 }

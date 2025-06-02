@@ -48,11 +48,15 @@ export class AuthController {
    */
   @ApiOperation({ summary: 'User login' })
   @ApiBody({ type: CreateUserDto }) // Ensure CreateUserDto has email and password
-  @ApiResponse({ status: 200, description: 'User successfully logged in, or 2FA step required.' })
+  @ApiResponse({
+    status: 200,
+    description: 'User successfully logged in, or 2FA step required.',
+  })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials.' })
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  async signIn(@Body() signInDto: CreateUserDto, @Request() req: any) { // `any` for req to simplify; consider a typed request.
+  async signIn(@Body() signInDto: CreateUserDto, @Request() req: any) {
+    // `any` for req to simplify; consider a typed request.
     const ipAddress = req.ip; // Capture IP address for security logging/session management.
     const userAgent = req.headers['user-agent']; // Capture User-Agent for session management.
 
@@ -79,7 +83,8 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'User successfully registered.' })
   @HttpCode(HttpStatus.CREATED)
   @Post('register')
-  async signUp(@Body() signUpDto: CreateUserDto, @Request() req: any) { // `any` for req to simplify.
+  async signUp(@Body() signUpDto: CreateUserDto, @Request() req: any) {
+    // `any` for req to simplify.
     const ipAddress = req.ip;
     const userAgent = req.headers['user-agent'];
 
@@ -113,7 +118,8 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized.' })
   @UseGuards(AuthGuard) // Protects the route, ensuring only authenticated users can access it.
   @Get('profile')
-  getProfile(@Request() req: AuthentificatedRequest) { // AuthenticatedRequest should type req.user
+  getProfile(@Request() req: AuthentificatedRequest) {
+    // AuthenticatedRequest should type req.user
     // The user object is attached to the request by the AuthGuard after validating the JWT.
     return req.user;
   }
@@ -156,7 +162,8 @@ export class AuthController {
       link: `${this.configService.get<string>('APP_WEB_URL')}/reset-password?token=${encodeURIComponent(token)}`, // Construct reset link
     });
     return {
-      message: 'If your email address is in our database, you will receive a password reset link shortly.', // More secure message
+      message:
+        'If your email address is in our database, you will receive a password reset link shortly.', // More secure message
     };
   }
 
@@ -195,12 +202,9 @@ export class AuthController {
     }
 
     // Update the user's password.
-    await this.usersService.updatePassword(
-      user.id,
-      body.password,
-    );
+    await this.usersService.updatePassword(user.id, body.password);
     // The updated password object is logged for debugging, consider removing in production.
-    // console.log(password); 
+    // console.log(password);
 
     // Invalidate the reset token after successful use.
     await this.authService.deleteResetToken(body.token);
@@ -294,7 +298,8 @@ export class AuthController {
    * @param request The Express request object.
    * @returns The token string if present and type is Bearer, otherwise undefined.
    */
-  private extractTokenFromHeader(request: any): string | undefined { // `any` for request; consider a more specific type.
+  private extractTokenFromHeader(request: any): string | undefined {
+    // `any` for request; consider a more specific type.
     const [type, tokenValue] = request.headers.authorization?.split(' ') ?? [];
     return type === 'Bearer' ? tokenValue : undefined;
   }
@@ -309,8 +314,12 @@ export class AuthController {
   @ApiOperation({ summary: 'Log out current user session' })
   @ApiBearerAuth()
   @ApiResponse({ status: 204, description: 'Successfully logged out.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized if no valid token is provided.' })
-  async logout(@Request() req: any) { // `any` for req; AuthenticatedRequest would be better.
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized if no valid token is provided.',
+  })
+  async logout(@Request() req: any) {
+    // `any` for req; AuthenticatedRequest would be better.
     const token = this.extractTokenFromHeader(req);
     if (token) {
       // Invalidate the session associated with this token.

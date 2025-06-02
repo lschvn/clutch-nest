@@ -4,8 +4,8 @@ import { BetModule } from './bet/bet.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
-    imports: [AuthModule, BetModule, UsersModule],
-    exports: [AuthModule, BetModule, UsersModule],
-    providers: [],
+  imports: [AuthModule, BetModule, UsersModule],
+  exports: [AuthModule, BetModule, UsersModule],
+  providers: [],
 })
 export class CoreModule {}

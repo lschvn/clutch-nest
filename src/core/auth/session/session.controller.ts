@@ -54,12 +54,16 @@ export class SessionController {
 
     if (!session) {
       // Or handle this in the service, but controller can also return 404
-      throw new ForbiddenException('Session not found or you do not have permission.');
+      throw new ForbiddenException(
+        'Session not found or you do not have permission.',
+      );
     }
 
     // Security Check: Ensure the session belongs to the authenticated user
     if (session.user.id !== req.user.id) {
-      throw new ForbiddenException('You are not authorized to revoke this session.');
+      throw new ForbiddenException(
+        'You are not authorized to revoke this session.',
+      );
     }
 
     await this.sessionService.invalidateSession(session.token);

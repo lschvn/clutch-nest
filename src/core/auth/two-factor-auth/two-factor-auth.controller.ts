@@ -61,7 +61,7 @@ export class TwoFactorAuthController {
    * @throws {BadRequestException} If 2FA is not enabled for the user.
    * @throws {UnauthorizedException} If the provided `twoFactorAuthenticationCode` is invalid.
    */
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Complete 2FA authentication after primary login',
     description: `This endpoint completes the two-factor authentication flow after a successful primary login.
 
@@ -77,16 +77,20 @@ export class TwoFactorAuthController {
 - Only call this after receiving twoFactorRequired: true from /auth/login
 - The 2FA code is sent automatically via email when 2FA is required
 - Codes expire after a short time for security (typically 5-10 minutes)
-- Session token should be stored securely and used for subsequent API calls`
+- Session token should be stored securely and used for subsequent API calls`,
   })
   @ApiBody({ type: LoginTwoFactorDto })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Two-factor authentication successful. Returns session token and user information.',
+  @ApiResponse({
+    status: 200,
+    description:
+      'Two-factor authentication successful. Returns session token and user information.',
     schema: {
       type: 'object',
       properties: {
-        sessionToken: { type: 'string', description: 'JWT session token for authenticated requests' },
+        sessionToken: {
+          type: 'string',
+          description: 'JWT session token for authenticated requests',
+        },
         user: {
           type: 'object',
           properties: {
@@ -94,14 +98,21 @@ export class TwoFactorAuthController {
             email: { type: 'string', description: 'User email address' },
             name: { type: 'string', description: 'User display name' },
             role: { type: 'string', description: 'User role (user/admin)' },
-            verified: { type: 'boolean', description: 'Email verification status' }
-          }
-        }
-      }
-    }
+            verified: {
+              type: 'boolean',
+              description: 'Email verification status',
+            },
+          },
+        },
+      },
+    },
   })
-  @ApiUnauthorizedResponse({ description: 'Invalid or expired 2FA code provided.' })
-  @ApiNotFoundResponse({ description: 'User ID not found or 2FA not enabled for this user.' })
+  @ApiUnauthorizedResponse({
+    description: 'Invalid or expired 2FA code provided.',
+  })
+  @ApiNotFoundResponse({
+    description: 'User ID not found or 2FA not enabled for this user.',
+  })
   // @BadRequestException('2FA not enabled for this user or other bad request.') // Removed this as it's handled in logic
   @HttpCode(HttpStatus.OK)
   @Post('authenticate')
@@ -119,24 +130,32 @@ export class TwoFactorAuthController {
 
     // Check if 2FA is actually enabled for this user as a safeguard.
     if (!user.isTwoFactorAuthenticationEnabled) {
-      throw new BadRequestException('Two-factor authentication is not enabled for this user.');
+      throw new BadRequestException(
+        'Two-factor authentication is not enabled for this user.',
+      );
     }
 
     // For email-based 2FA, verify the code sent to the user's email.
     // This might involve checking a code against a stored value in cache or database.
     const isCodeValid = await this.twoFactorAuthService.verifyEmailLoginCode(
-        userId,
-        twoFactorAuthenticationCode,
+      userId,
+      twoFactorAuthenticationCode,
     );
 
     if (!isCodeValid) {
-      throw new UnauthorizedException('Invalid two-factor authentication code.');
+      throw new UnauthorizedException(
+        'Invalid two-factor authentication code.',
+      );
     }
 
     // If code is valid, create a new session for the user.
     const ipAddress = req.ip;
     const userAgent = req.headers['user-agent'];
-    const sessionToken = await this.sessionService.createSession(user.id, ipAddress, userAgent);
+    const sessionToken = await this.sessionService.createSession(
+      user.id,
+      ipAddress,
+      userAgent,
+    );
 
     // Return non-sensitive user information along with the session token.
     const safeUser = {
@@ -162,7 +181,7 @@ export class TwoFactorAuthController {
    * @param response - The Express response object, used to send the OTP Auth URL.
    */
   @Post('generate')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Generate QR code for authenticator app setup',
     description: `Generates a new secret and QR code URL for setting up authenticator app-based 2FA.
 
@@ -182,20 +201,22 @@ export class TwoFactorAuthController {
 **Security Notes:**
 - Secret expires in 5 minutes if not verified
 - User must complete setup with turn-on endpoint to activate 2FA
-- Old secrets are invalidated when new ones are generated`
+- Old secrets are invalidated when new ones are generated`,
   })
   @ApiResponse({
     status: 200,
-    description: 'QR code generation successful. Use otpauthUrl to create QR code for user to scan.',
-    schema: { 
-      type: 'object', 
-      properties: { 
-        otpauthUrl: { 
+    description:
+      'QR code generation successful. Use otpauthUrl to create QR code for user to scan.',
+    schema: {
+      type: 'object',
+      properties: {
+        otpauthUrl: {
           type: 'string',
           description: 'OTP Auth URL to be converted into QR code by frontend',
-          example: 'otpauth://totp/YourApp:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=YourApp'
-        } 
-      } 
+          example:
+            'otpauth://totp/YourApp:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=YourApp',
+        },
+      },
     },
   })
   async generateSecret(
@@ -248,27 +269,31 @@ export class TwoFactorAuthController {
 **Post-Activation:**
 - All future logins will require 2FA via email codes
 - User can disable 2FA using the turn-off endpoint
-- Backup codes should be generated and displayed (if implemented)`
+- Backup codes should be generated and displayed (if implemented)`,
   })
   @ApiBody({ type: TwoFactorAuthenticationCodeDto })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: '2FA successfully enabled for user account.',
     schema: {
       type: 'object',
       properties: {
-        message: { 
-          type: 'string', 
-          example: 'Two-factor authentication has been enabled successfully.' 
-        }
-      }
-    }
+        message: {
+          type: 'string',
+          example: 'Two-factor authentication has been enabled successfully.',
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 400,
-    description: 'Invalid authenticator code or setup session expired. User must restart from /generate.',
+    description:
+      'Invalid authenticator code or setup session expired. User must restart from /generate.',
   })
-  @ApiResponse({ status: 401, description: 'User session invalid. Re-authentication required.'})
+  @ApiResponse({
+    status: 401,
+    description: 'User session invalid. Re-authentication required.',
+  })
   @HttpCode(HttpStatus.OK)
   @Post('turn-on')
   async turnOnTwoFactorAuthentication(
@@ -277,11 +302,15 @@ export class TwoFactorAuthController {
   ) {
     const userId = req.user.id;
     // Retrieve the temporary 2FA secret stored during the 'generate' step.
-    const tempSecret = await this.cacheManager.get<string>(`2fa_secret_${userId}`);
+    const tempSecret = await this.cacheManager.get<string>(
+      `2fa_secret_${userId}`,
+    );
 
     if (!tempSecret) {
       // This can happen if the user takes too long to enter the code or never started the generate process.
-      throw new BadRequestException('2FA secret expired or not found. Please try generating a new QR code.');
+      throw new BadRequestException(
+        '2FA secret expired or not found. Please try generating a new QR code.',
+      );
     }
 
     // Validate the code provided by the user against the stored temporary secret.
@@ -304,7 +333,9 @@ export class TwoFactorAuthController {
     // Clean up by removing the temporary secret from the cache.
     await this.cacheManager.del(`2fa_secret_${userId}`);
 
-    return { message: 'Two-factor authentication has been enabled successfully.' };
+    return {
+      message: 'Two-factor authentication has been enabled successfully.',
+    };
   }
 
   /**
@@ -339,28 +370,32 @@ export class TwoFactorAuthController {
 - Warn user about reduced security when disabling 2FA
 - Clearly explain they need their authenticator app
 - Provide option to re-enable 2FA easily
-- Show confirmation message after successful disabling`
+- Show confirmation message after successful disabling`,
   })
   @ApiBody({ type: TwoFactorAuthenticationCodeDto })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: '2FA successfully disabled for user account.',
     schema: {
       type: 'object',
       properties: {
-        message: { 
-          type: 'string', 
-          example: 'Two-factor authentication has been disabled successfully.' 
-        }
-      }
-    }
+        message: {
+          type: 'string',
+          example: 'Two-factor authentication has been disabled successfully.',
+        },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Invalid authenticator code or 2FA not currently enabled for this account.' 
+  @ApiResponse({
+    status: 400,
+    description:
+      'Invalid authenticator code or 2FA not currently enabled for this account.',
   })
-  @ApiResponse({ status: 401, description: 'User session invalid. Re-authentication required.'})
-  @ApiResponse({ status: 404, description: 'User account not found.'})
+  @ApiResponse({
+    status: 401,
+    description: 'User session invalid. Re-authentication required.',
+  })
+  @ApiResponse({ status: 404, description: 'User account not found.' })
   @HttpCode(HttpStatus.OK)
   @Post('turn-off')
   async turnOffTwoFactorAuthentication(
@@ -371,13 +406,18 @@ export class TwoFactorAuthController {
     // Fetch the full user entity to access their persisted 2FA secret.
     const user = await this.usersService.findOne(userId);
     if (!user) {
-        // This should ideally be caught by AuthGuard, but as a safeguard:
-        throw new NotFoundException('User not found.');
+      // This should ideally be caught by AuthGuard, but as a safeguard:
+      throw new NotFoundException('User not found.');
     }
 
     // Check if 2FA is actually enabled and a secret exists.
-    if (!user.isTwoFactorAuthenticationEnabled || !user.twoFactorAuthenticationSecret) {
-      throw new BadRequestException('Two-factor authentication is not currently enabled for this account.');
+    if (
+      !user.isTwoFactorAuthenticationEnabled ||
+      !user.twoFactorAuthenticationSecret
+    ) {
+      throw new BadRequestException(
+        'Two-factor authentication is not currently enabled for this account.',
+      );
     }
 
     // Validate the provided 2FA code against the user's stored secret.
@@ -396,6 +436,8 @@ export class TwoFactorAuthController {
       isTwoFactorAuthenticationEnabled: false, // Set 2FA to disabled
     });
 
-    return { message: 'Two-factor authentication has been disabled successfully.' };
+    return {
+      message: 'Two-factor authentication has been disabled successfully.',
+    };
   }
 }

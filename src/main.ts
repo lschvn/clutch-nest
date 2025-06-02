@@ -35,11 +35,20 @@ async function bootstrap() {
   // Set up Swagger documentation
   const config = new DocumentBuilder()
     .setTitle(configService.get<string>('OPEN_API_TITLE', 'Clutch Esport API'))
-    .setDescription(configService.get<string>('OPEN_API_DESCRIPTION', 'Clutch Esport API Documentation'))
+    .setDescription(
+      configService.get<string>(
+        'OPEN_API_DESCRIPTION',
+        'Clutch Esport API Documentation',
+      ),
+    )
     .setVersion(configService.get<string>('OPEN_API_VERSION', '1.0.0'))
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup(configService.get<string>('OPEN_API_PATH', 'docs'), app, documentFactory);
+  SwaggerModule.setup(
+    configService.get<string>('OPEN_API_PATH', 'docs'),
+    app,
+    documentFactory,
+  );
 
   // Set global prefix for API routes
   app.setGlobalPrefix('api');
