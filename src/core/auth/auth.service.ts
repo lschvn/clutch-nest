@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import { UsersService } from '../users/users.service';
 import { SessionService } from './session/session.service';
-import { TwoFactorAuthService } from './two-factor-auth/two-factor-auth.service'; // Added
+import { TfaService } from './tfa/tfa.service'; // Updated
 import { EventEmitter2 } from '@nestjs/event-emitter'; // Added
 
 @Injectable()
@@ -14,7 +14,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     private readonly sessionService: SessionService,
-    private readonly twoFactorAuthService: TwoFactorAuthService, // Injected TwoFactorAuthService
+    private readonly tfaService: TfaService, // Injected TfaService
     private readonly eventEmitter: EventEmitter2, // Injected EventEmitter2
   ) {}
   async signIn(
@@ -41,7 +41,7 @@ export class AuthService {
     if (user.isTwoFactorAuthenticationEnabled) {
       // User has 2FA enabled, generate email code and signal client.
       const emailCode =
-        await this.twoFactorAuthService.generateAndCacheEmailLoginCode(user.id);
+        await this.tfaService.generateAndCacheEmailLoginCode(user.id);
       this.eventEmitter.emit('auth.2fa.send_login_code', {
         email: user.email,
         name: user.name,
