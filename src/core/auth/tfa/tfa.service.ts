@@ -8,7 +8,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter'; // Added
 import * as crypto from 'crypto'; // Added
 
 @Injectable()
-export class TwoFactorAuthService {
+export class TfaService {
   constructor(
     private readonly usersService: UsersService,
     private readonly configService: ConfigService,

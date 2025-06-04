@@ -7,7 +7,7 @@ import { UsersModule } from '../users/users.module'; // import UsersModule so Us
 import { CacheModule } from '@nestjs/cache-manager'; // import CacheModule for CACHE_MANAGER
 import { ConfigModule } from '@nestjs/config';
 import { SessionModule } from './session/session.module'; // Provide SessionService
-import { TwoFactorAuthModule } from './two-factor-auth/two-factor-auth.module'; // Provide TwoFactorAuthService
+import { TfaModule } from './tfa/tfa.module'; // Provide TfaService
 
 @Module({
   imports: [
@@ -20,7 +20,7 @@ import { TwoFactorAuthModule } from './two-factor-auth/two-factor-auth.module'; 
     UsersModule,
     CacheModule.register(),
     SessionModule, // So AuthService can inject SessionService
-    TwoFactorAuthModule, // So AuthService can inject TwoFactorAuthService & handlers
+    TfaModule, // So AuthService can inject TfaService & handlers
   ],
   controllers: [AuthController],
   providers: [AuthService],

@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, Length } from 'class-validator';
 
-export class TwoFactorAuthenticationCodeDto {
+export class TfaCodeDto {
   @ApiProperty({
     description: 'The 6-digit code from the authenticator app',
     example: '123456',

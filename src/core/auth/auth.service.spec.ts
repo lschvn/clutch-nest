@@ -4,7 +4,7 @@ import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { SessionService } from './session/session.service';
-import { TwoFactorAuthService } from './two-factor-auth/two-factor-auth.service';
+import { TfaService } from './tfa/tfa.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 describe('AuthService', () => {
@@ -38,7 +38,7 @@ describe('AuthService', () => {
       updateSession: jest.fn(),
     };
 
-    const mockTwoFactorAuthService = {
+    const mockTfaService = {
       generateSecret: jest.fn(),
       verifyToken: jest.fn(),
       generateQRCode: jest.fn(),
@@ -70,8 +70,8 @@ describe('AuthService', () => {
           useValue: mockSessionService,
         },
         {
-          provide: TwoFactorAuthService,
-          useValue: mockTwoFactorAuthService,
+          provide: TfaService,
+          useValue: mockTfaService,
         },
         {
           provide: EventEmitter2,

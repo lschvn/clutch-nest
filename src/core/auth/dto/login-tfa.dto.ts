@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsInt, IsString, IsNotEmpty, Length, Min } from 'class-validator';
 
-export class LoginTwoFactorDto {
+export class LoginTfaDto {
   @ApiProperty({
     description: 'The ID of the user attempting to log in.',
     example: 1,

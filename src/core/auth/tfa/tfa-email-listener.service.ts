@@ -8,13 +8,13 @@ export interface TwoFactorLoginCodePayload {
 }
 
 @Injectable()
-export class TwoFactorEmailListenerService {
+export class TfaEmailListenerService {
   @OnEvent('auth.2fa.send_login_code')
   async handleSendTwoFactorLoginCode(payload: TwoFactorLoginCodePayload) {
     // In a real application, this would use an email service (e.g., MailerService)
     // For now, we just log to the console to simulate email sending.
     console.log(
-      `[TwoFactorEmailListenerService] Simulating sending email to: ${payload.email}`,
+      `[TfaEmailListenerService] Simulating sending email to: ${payload.email}`,
     );
     console.log(`  User: ${payload.name}`);
     console.log(`  2FA Code: ${payload.code}`);
