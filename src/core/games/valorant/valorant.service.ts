@@ -75,11 +75,25 @@ export class ValorantService implements OnApplicationBootstrap {
       )
     ).filter((m): m is VlrMatch => !isVlrCompletedMatch(m));
 
-    const teamsMap = await this._findOrCreateTeamsAndPlayers(newMatchesDetails);
-    const tournamentsMap =
-      await this._findOrCreateTournaments(newMatchesDetails);
+    const validMatches = newMatchesDetails.filter((match) => {
+      const isTbd = match.team1.name === 'TBD' || match.team2.name === 'TBD';
+      if (isTbd) {
+        this.logger.log(
+          `Filtering out match ${match.id} because it contains a TBD team.`,
+        );
+      }
+      return !isTbd;
+    });
 
-    const matchesToSave = newMatchesDetails
+    if (validMatches.length === 0) {
+      this.logger.log('No new valid upcoming matches found.');
+      return;
+    }
+
+    const teamsMap = await this._findOrCreateTeamsAndPlayers(validMatches);
+    const tournamentsMap = await this._findOrCreateTournaments(validMatches);
+
+    const matchesToSave = validMatches
       .map((matchDetail) => {
         const startsAt = new Date(matchDetail.utcTimestamp);
         if (!matchDetail.utcTimestamp || isNaN(startsAt.getTime())) {
@@ -92,6 +106,13 @@ export class ValorantService implements OnApplicationBootstrap {
         const teamA = teamsMap.get(matchDetail.team1.name);
         const teamB = teamsMap.get(matchDetail.team2.name);
         const tournament = tournamentsMap.get(matchDetail.event.name);
+
+        if (!teamA || !teamB || !tournament) {
+          this.logger.error(
+            `Could not find team or tournament for upcoming match ${matchDetail.id}. Skipping.`,
+          );
+          return null;
+        }
 
         const originalUpcomingMatch = newUpcomingMatches.find(
           (m) =>
@@ -208,8 +229,8 @@ export class ValorantService implements OnApplicationBootstrap {
 
       if (teamA && teamB) {
         const probA = 1 / (1 + 10 ** ((teamB.elo - teamA.elo) / 400));
-        match.oddsTeamA = 1 / probA;
-        match.oddsTeamB = 1 / (1 - probA);
+        match.oddsTeamA = parseFloat((1 / probA).toFixed(2));
+        match.oddsTeamB = parseFloat((1 / (1 - probA)).toFixed(2));
         await this.matchRepository.save(match);
         updatedCount++;
       } else {
