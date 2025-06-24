@@ -102,7 +102,7 @@ erDiagram
         number tournament_id FK
         number team_a_id FK
         number team_b_id FK
-        number winner_team_id FK "Peut être NULL"
+        number winner_team_id FK
     }
 
     Bet {
@@ -147,7 +147,6 @@ erDiagram
     Team ||--o{ Bet : "est prédit gagnant dans"
     Player ||..o{ EloHistory : "a un historique"
     Team ||..o{ EloHistory : "a un historique"
-}
 ```
 
 ## 4. Infrastructure
