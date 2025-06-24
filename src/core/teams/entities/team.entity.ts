@@ -2,10 +2,12 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Game } from '../../games/enums/game.enum';
+import { Player } from '../../players/entities/player.entity';
 
 @Entity({ name: 'teams' })
 export class Team {
@@ -20,6 +22,9 @@ export class Team {
 
   @Column({ unique: true })
   name: string;
+
+  @OneToMany(() => Player, (player) => player.team)
+  players: Player[];
 
   @Column({ default: 1000 })
   elo: number;

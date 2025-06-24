@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { VlrService } from './vlr/vlr.service';
 import { MatchStatus } from 'src/core/matches/enums/matches.enum';
@@ -8,11 +8,17 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Game } from '../enums/game.enum';
 import { Team } from 'src/core/teams/entities/team.entity';
 import { Tournament } from 'src/core/tournaments/entities/tournament.entity';
-import { VlrMatch, VlrUpcomingMatch } from './vlr/vlr';
+import { VlrCompletedMatch, VlrMatch, VlrUpcomingMatch } from './vlr/vlr.d';
 import { Player } from 'src/core/players/entities/player.entity';
 
+function isVlrCompletedMatch(
+  match: VlrMatch | VlrCompletedMatch,
+): match is VlrCompletedMatch {
+  return (match as VlrCompletedMatch).status === 'final';
+}
+
 @Injectable()
-export class ValorantService {
+export class ValorantService implements OnApplicationBootstrap {
   private readonly logger = new Logger(ValorantService.name);
 
   constructor(
@@ -27,7 +33,12 @@ export class ValorantService {
     private readonly vlrService: VlrService,
   ) {}
 
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  async onApplicationBootstrap() {
+    this.logger.log('Running upcoming matches on startup...');
+    await this.handleUpcomingMatches();
+  }
+
+  @Cron(CronExpression.EVERY_HOUR)
   async handleUpcomingMatches() {
     this.logger.log('Fetching upcoming matches...');
     const upcomingMatches = await this.vlrService.getUpcomingMatches();
@@ -38,46 +49,68 @@ export class ValorantService {
       return;
     }
 
-    const newMatchesDetails = await Promise.all(
-      newUpcomingMatches.map((match) =>
-        this.vlrService.getMatchById(
-          this.vlrService.extractIdFromUrl(match.match_page),
+    const newMatchesDetails = (
+      await Promise.all(
+        newUpcomingMatches.map((match) =>
+          this.vlrService.getMatchById(
+            this.vlrService.extractIdFromUrl(match.match_page),
+          ),
         ),
-      ),
-    );
+      )
+    ).filter((m): m is VlrMatch => !isVlrCompletedMatch(m));
 
     const teamsMap = await this._findOrCreateTeamsAndPlayers(newMatchesDetails);
     const tournamentsMap =
       await this._findOrCreateTournaments(newMatchesDetails);
 
-    const matchesToSave = newMatchesDetails.map((matchDetail, index) => {
-      const teamA = teamsMap.get(matchDetail.team1.name);
-      const teamB = teamsMap.get(matchDetail.team2.name);
-      const tournament = tournamentsMap.get(matchDetail.event.name);
+    const matchesToSave = newMatchesDetails
+      .map((matchDetail) => {
+        const startsAt = new Date(matchDetail.utcTimestamp);
+        if (!matchDetail.utcTimestamp || isNaN(startsAt.getTime())) {
+          this.logger.warn(
+            `Upcoming match with VLR ID ${matchDetail.id} has an invalid timestamp: "${matchDetail.utcTimestamp}". Skipping.`,
+          );
+          return null;
+        }
 
-      return this.matchRepository.create({
-        game: Game.VALORANT,
-        startsAt: new Date(matchDetail.utcTimestamp),
-        status: MatchStatus.UPCOMING,
-        teamA,
-        teamB,
-        tournament,
-        metadata: {
-          vlrId: this.vlrService.extractIdFromUrl(
-            newUpcomingMatches[index].match_page,
-          ),
-          vlrUrl: newUpcomingMatches[index].match_page,
-          team1Name: matchDetail.team1.name,
-          team2Name: matchDetail.team2.name,
-          team1Logo: matchDetail.team1.logoUrl,
-          team2Logo: matchDetail.team2.logoUrl,
-          eventName: matchDetail.event.name,
-          eventSeries: matchDetail.event.series,
-          bestOf: matchDetail.bestOf,
-          streams: matchDetail.streams,
-        },
-      });
-    });
+        const teamA = teamsMap.get(matchDetail.team1.name);
+        const teamB = teamsMap.get(matchDetail.team2.name);
+        const tournament = tournamentsMap.get(matchDetail.event.name);
+
+        const originalUpcomingMatch = newUpcomingMatches.find(
+          (m) =>
+            this.vlrService.extractIdFromUrl(m.match_page) === matchDetail.id,
+        );
+
+        if (!originalUpcomingMatch) {
+          this.logger.error(
+            `Could not find original upcoming match for detail ${matchDetail.id}`,
+          );
+          return null;
+        }
+
+        return this.matchRepository.create({
+          game: Game.VALORANT,
+          startsAt,
+          status: MatchStatus.UPCOMING,
+          teamA,
+          teamB,
+          tournament,
+          metadata: {
+            vlrId: matchDetail.id,
+            vlrUrl: originalUpcomingMatch.match_page,
+            team1Name: matchDetail.team1.name,
+            team2Name: matchDetail.team2.name,
+            team1Logo: matchDetail.team1.logoUrl,
+            team2Logo: matchDetail.team2.logoUrl,
+            eventName: matchDetail.event.name,
+            eventSeries: matchDetail.event.series,
+            bestOf: matchDetail.bestOf,
+            streams: matchDetail.streams,
+          },
+        });
+      })
+      .filter((match): match is Match => match !== null);
 
     await this.matchRepository.save(matchesToSave);
     this.logger.log(`Added ${matchesToSave.length} new matches.`);
@@ -129,26 +162,33 @@ export class ValorantService {
    * @returns A map of team names to Team entities.
    */
   private async _findOrCreateTeamsAndPlayers(
-    newMatchesDetails: VlrMatch[],
+    newMatchesDetails: (VlrMatch | VlrCompletedMatch)[],
+    options: { fetchHistory?: boolean } = { fetchHistory: true },
   ): Promise<Map<string, Team>> {
     const allTeamNames = newMatchesDetails.flatMap((match) => [
       match.team1.name,
       match.team2.name,
     ]);
     const uniqueTeamNames = [...new Set(allTeamNames)];
+    if (uniqueTeamNames.length === 0) return new Map();
     this.logger.log(`Processing teams: ${uniqueTeamNames.join(', ')}`);
 
     const existingTeams = await this.teamRepository.find({
       where: { name: In(uniqueTeamNames) },
+      relations: ['players'],
     });
     const teamsMap = new Map(existingTeams.map((t) => [t.name, t]));
     this.logger.log(`Found ${existingTeams.length} existing teams in DB.`);
 
-    const newTeamNames = uniqueTeamNames.filter((name) => !teamsMap.has(name));
+    const newTeamNames = uniqueTeamNames.filter(
+      (name) => !teamsMap.has(name) && name !== 'TBD',
+    );
 
     if (newTeamNames.length > 0) {
       this.logger.log(
-        `Found ${newTeamNames.length} new teams to create: ${newTeamNames.join(', ')}`,
+        `Found ${newTeamNames.length} new teams to create: ${newTeamNames.join(
+          ', ',
+        )}`,
       );
       const teamCreationPromises = newTeamNames.map(async (name) => {
         const match = newMatchesDetails.find(
@@ -159,6 +199,10 @@ export class ValorantService {
         const teamLink =
           match.team1.name === name ? match.team1.link : match.team2.link;
         const teamVlrId = this.vlrService.extractIdFromUrl(teamLink);
+        if (!teamVlrId) {
+          this.logger.warn(`Could not extract VLR ID for team: ${name}`);
+          return;
+        }
         this.logger.log(
           `Fetching details for new team: ${name} (VLR ID: ${teamVlrId})`,
         );
@@ -188,6 +232,7 @@ export class ValorantService {
               metadata: {
                 realName: player.realName,
                 country: player.country,
+                vlrLink: player.link,
               },
             }),
           );
@@ -204,7 +249,137 @@ export class ValorantService {
         `Successfully added ${newTeamNames.length} new teams and their players.`,
       );
     }
+
+    if (options.fetchHistory) {
+      const allTeams = Array.from(teamsMap.values());
+      for (const team of allTeams) {
+        await this._storeMatchHistory(team);
+      }
+    }
+
     return teamsMap;
+  }
+
+  private async _storeMatchHistory(team: Team) {
+    const vlrMatches = await this.vlrService.getMatchesFromTeamId(
+      team.metadata.vlrId,
+    );
+
+    const completedMatches = vlrMatches.filter(isVlrCompletedMatch);
+
+    if (completedMatches.length === 0) {
+      this.logger.log(`No completed matches found for team ${team.name}`);
+      return;
+    }
+
+    this.logger.log(
+      `Found ${completedMatches.length} completed matches for team ${team.name}`,
+    );
+
+    const existingMatches = await this.matchRepository.find({
+      where: {
+        metadata: { vlrId: In(completedMatches.map((m) => m.id)) },
+        game: Game.VALORANT,
+      },
+    });
+
+    const newMatches = completedMatches.filter(
+      (match) =>
+        !existingMatches.some(
+          (existing) => existing.metadata.vlrId === match.id,
+        ),
+    );
+
+    if (newMatches.length === 0) {
+      this.logger.log(`No new matches to store for team ${team.name}.`);
+      return;
+    }
+
+    const teamsMap = await this._findOrCreateTeamsAndPlayers(newMatches, {
+      fetchHistory: false,
+    });
+    const tournamentsMap = await this._findOrCreateTournaments(newMatches);
+
+    const matchesToSave = newMatches
+      .map((matchDetail) => {
+        if (!isVlrCompletedMatch(matchDetail)) return null;
+
+        const startsAt = new Date(matchDetail.utcTimestamp);
+        if (!matchDetail.utcTimestamp || isNaN(startsAt.getTime())) {
+          this.logger.warn(
+            `Completed match with VLR ID ${matchDetail.id} has an invalid timestamp: "${matchDetail.utcTimestamp}". Skipping.`,
+          );
+          return null;
+        }
+
+        const teamA = teamsMap.get(matchDetail.team1.name);
+        const teamB = teamsMap.get(matchDetail.team2.name);
+        const tournament = tournamentsMap.get(matchDetail.event.name);
+
+        if (!teamA || !teamB || !tournament) {
+          this.logger.error(
+            `Could not find team or tournament for match ${matchDetail.id}`,
+          );
+          return null;
+        }
+
+        let winnerTeam: Team | undefined;
+        if (matchDetail.team1.score > matchDetail.team2.score) {
+          winnerTeam = teamA;
+        } else if (matchDetail.team2.score > matchDetail.team1.score) {
+          winnerTeam = teamB;
+        }
+
+        return this.matchRepository.create({
+          game: Game.VALORANT,
+          startsAt,
+          status: MatchStatus.FINISHED,
+          teamA,
+          teamB,
+          tournament,
+          winnerTeam,
+          metadata: {
+            vlrId: matchDetail.id,
+            vlrUrl: `${this.vlrService.vlrUrl}/${matchDetail.id}`,
+            team1Name: matchDetail.team1.name,
+            team2Name: matchDetail.team2.name,
+            team1Logo: matchDetail.team1.logoUrl,
+            team2Logo: matchDetail.team2.logoUrl,
+            team1Score: matchDetail.team1.score,
+            team2Score: matchDetail.team2.score,
+            eventName: matchDetail.event.name,
+            eventSeries: matchDetail.event.series,
+            bestOf: matchDetail.bestOf,
+            streams: matchDetail.streams,
+            maps: matchDetail.maps,
+            patch: matchDetail.patch,
+            head2head: matchDetail.head2head,
+            pastMatchesTeam1: matchDetail.pastMatchesTeam1,
+            pastMatchesTeam2: matchDetail.pastMatchesTeam2,
+          },
+        });
+      })
+      .filter((match): match is Match => match !== null);
+
+    await this.matchRepository.save(matchesToSave);
+    this.logger.log(
+      `Added ${matchesToSave.length} new completed matches for team ${team.name}.`,
+    );
+  }
+
+  private mapVlrStatusToMatchStatus(vlrStatus: string): MatchStatus {
+    const lowerStatus = vlrStatus.toLowerCase();
+    if (lowerStatus.includes('live')) {
+      return MatchStatus.LIVE;
+    }
+    if (
+      lowerStatus.includes('final') ||
+      lowerStatus.includes('completed') ||
+      /\d+\s*-\s*\d+/.test(lowerStatus)
+    ) {
+      return MatchStatus.FINISHED;
+    }
+    return MatchStatus.UPCOMING;
   }
 
   /**
@@ -213,7 +388,7 @@ export class ValorantService {
    * @returns A map of tournament names to Tournament entities.
    */
   private async _findOrCreateTournaments(
-    newMatchesDetails: VlrMatch[],
+    newMatchesDetails: (VlrMatch | VlrCompletedMatch)[],
   ): Promise<Map<string, Tournament>> {
     const allTournamentNames = newMatchesDetails.map(
       (match) => match.event.name,
