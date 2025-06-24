@@ -19,7 +19,9 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
         },
       ],
     }),
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     CacheModule.register(),
     EventEmitterModule.forRoot(),
     CoreModule,

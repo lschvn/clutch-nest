@@ -53,7 +53,8 @@ async function bootstrap() {
   // Set global prefix for API routes
   app.setGlobalPrefix('api');
 
-  const port = configService.get<number>('APP_PORT', 3000);
+  const port = parseInt(configService.get('APP_PORT') || '', 10) || 3000;
+
   await app.listen(port, '0.0.0.0');
 }
 

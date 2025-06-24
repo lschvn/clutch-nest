@@ -165,7 +165,6 @@ Ce module est responsable de la connexion à la base de données.
 Le module `Mailer` gère l'envoi d'e-mails transactionnels.
 
 - **Utilisation** : Essentiel pour des fonctionnalités comme la confirmation d'inscription, la réinitialisation de mot de passe ou l'envoi de codes pour l'authentification à deux facteurs (2FA).
-- **Implémentation** : Il s'appuie généralement sur un service externe (comme SendGrid, Mailgun, ou un simple serveur SMTP) pour assurer une délivrabilité fiable.
 
 ### 4.3. Analytics
 

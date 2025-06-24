@@ -9,6 +9,9 @@
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
+    "docker:dev": "docker-compose up -d",
+    "docker:reset": "docker-compose down -v",
+    "docker:logs": "docker-compose logs -f",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
@@ -89,5 +92,8 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  }, 
+  "engines": {
+    "node": ">=20.0.0"
   }
 }
