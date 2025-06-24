@@ -18,6 +18,11 @@ import type {
 } from './vlr.d';
 import * as cheerio from 'cheerio';
 
+/**
+ * A service for scraping match and team data from VLR.gg.
+ * It provides methods for fetching upcoming matches, completed matches,
+ * team details, and parsing various data points from the website's HTML.
+ */
 @Injectable()
 export class VlrService {
   private readonly apiUrl = 'https://vlrggapi.vercel.app';
