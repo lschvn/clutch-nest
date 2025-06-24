@@ -3,8 +3,10 @@ import type {
   VlrMatch,
   VlrMatchMap,
   VlrPlayerStats,
+  VlrTeam,
   VlrUpcomingMatches,
   VlrUpcomingMatchRes,
+  VlrPlayer,
 } from './vlr';
 import * as cheerio from 'cheerio';
 
@@ -27,8 +29,8 @@ export class VlrService {
    * @returns The match ID
    */
   extractIdFromUrl(url: string): string {
-    const matchIdMatch = url.match(/vlr\.gg\/(\d+)/);
-    return matchIdMatch ? matchIdMatch[1] : '';
+    const match = url.match(/\/(team\/)?(\d+)/);
+    return match ? match[2] : '';
   }
 
   /**
@@ -85,6 +87,9 @@ export class VlrService {
       logoUrl:
         'https:' +
         mainContainer.find('.match-header-link.mod-1 img').attr('src'),
+      link:
+        this.vlrUrl +
+        mainContainer.find('.match-header-link.mod-1').attr('href'),
     };
     const team2 = {
       name: mainContainer
@@ -94,6 +99,9 @@ export class VlrService {
       logoUrl:
         'https:' +
         mainContainer.find('.match-header-link.mod-2 img').attr('src'),
+      link:
+        this.vlrUrl +
+        mainContainer.find('.match-header-link.mod-2').attr('href'),
     };
 
     const status = mainContainer
@@ -286,5 +294,88 @@ export class VlrService {
     const allMatches = await Promise.all(matchDetailsPromises);
 
     return allMatches;
+  }
+
+  async getTeamById(teamId: string): Promise<VlrTeam> {
+    const res = await fetch(`${this.vlrUrl}/team/${teamId}`);
+    const html = await res.text();
+    const $ = cheerio.load(html);
+
+    const name = $('.team-header-name h1').text().trim();
+    const tag = $('.team-header-name h2').text().trim();
+    const logoUrl = 'https:' + $('.team-header-logo img').attr('src');
+    const country = $('.team-header-country').text().trim();
+    const roster: VlrTeam['roster'] = [];
+    const staff: VlrTeam['staff'] = [];
+
+    const rosterElements = $('.team-roster-item');
+    rosterElements.each((i, el) => {
+      const $el = $(el);
+      const aliasElement = $el.find('.team-roster-item-name-alias');
+      const countryClass = aliasElement.find('i.flag').attr('class');
+      const countryName = this.getCountryFromClass(countryClass);
+
+      // Clone to extract name without modifying the tree for subsequent operations
+      const aliasClone = aliasElement.clone();
+      aliasClone.find('i.flag').remove();
+      const playerName = aliasClone.text().trim();
+
+      const playerLink = this.vlrUrl + $el.find('a').attr('href');
+      const realName = $el.find('.team-roster-item-name-real').text().trim();
+
+      const isSub =
+        $el.find('.wf-tag.mod-light:contains("Sub")').length > 0 ||
+        $el.find('.wf-tag.mod-light:contains("Substitute")').length > 0;
+
+      const roleElement = $el.find(
+        '.wf-tag.mod-light.team-roster-item-name-role',
+      );
+      const isStaff = roleElement.length > 0 && !isSub;
+
+      const player: VlrPlayer = {
+        name: playerName,
+        link: playerLink,
+        realName: realName || undefined,
+        country: countryName,
+        isSub,
+        isStaff,
+        role: isStaff ? roleElement.text().trim() : undefined,
+      };
+
+      if (isStaff) {
+        staff.push(player);
+      } else {
+        roster.push(player);
+      }
+    });
+
+    return {
+      name,
+      tag,
+      logoUrl,
+      country,
+      roster,
+      staff,
+    };
+  }
+
+  private getCountryFromClass(className?: string): string {
+    if (!className) return '';
+
+    const classParts = className.split(' ');
+    const modClass = classParts.find((c) => c.startsWith('mod-'));
+
+    if (!modClass) return '';
+
+    const countryCode = modClass.slice(4);
+    const countryMap: { [key: string]: string } = {
+      eg: 'Egypt',
+      jo: 'Jordan',
+      ru: 'Russia',
+      tn: 'Tunisia',
+      un: 'International',
+    };
+
+    return countryMap[countryCode] || '';
   }
 }

@@ -58,10 +58,12 @@ export type VlrMatch = {
   team1: {
     name: string;
     logoUrl: string;
+    link: string;
   };
   team2: {
     name: string;
     logoUrl: string;
+    link: string;
   };
   status: string;
   bestOf: string;
@@ -71,4 +73,23 @@ export type VlrMatch = {
   }[];
   vodsAvailable: boolean;
   maps: VlrMatchMap[];
+};
+
+export type VlrPlayer = {
+  name: string;
+  link: string;
+  realName?: string;
+  country: string;
+  isSub: boolean;
+  isStaff: boolean;
+  role?: string;
+};
+
+export type VlrTeam = {
+  name: string;
+  tag: string;
+  logoUrl: string;
+  country: string;
+  roster: VlrPlayer[];
+  staff: VlrPlayer[];
 };

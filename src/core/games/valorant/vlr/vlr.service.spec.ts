@@ -71,4 +71,30 @@ describe('VlrService', () => {
       expect(firstMatch).toHaveProperty('maps');
     }, 60000); // Increased timeout for this test
   });
+
+  describe('getTeamById', () => {
+    it('should return team details and roster for a given id', async () => {
+      // Using Team GB as per the request
+      const teamId = '17986';
+      const team = await service.getTeamById(teamId);
+
+      expect(team).toBeDefined();
+      expect(team.name).toBe('Team GB');
+      expect(team.tag).toBe('GB');
+      expect(team.country).toBe('International');
+      expect(team.roster.length).toBeGreaterThan(0);
+      expect(team.staff.length).toBeGreaterThan(0);
+
+      // Check for a specific player
+      const player = team.roster.find((p) => p.name === 'Shehab');
+      expect(player).toBeDefined();
+      expect(player?.realName).toBe('Shehab Hussain');
+      expect(player?.country).toBe('Egypt');
+
+      // Check for a staff member
+      const staffMember = team.staff.find((s) => s.name === 'ALTR0N');
+      expect(staffMember).toBeDefined();
+      expect(staffMember?.role).toBe('manager');
+    }, 30000);
+  });
 });

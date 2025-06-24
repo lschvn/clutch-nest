@@ -8,6 +8,7 @@ import { Bet } from 'src/core/bet/entities/bet.entity';
 import { Match } from 'src/core/matches/entities/match.entity';
 import { Team } from 'src/core/teams/entities/team.entity';
 import { Tournament } from 'src/core/tournaments/entities/tournament.entity';
+import { Player } from 'src/core/players/entities/player.entity';
 
 @Module({
   imports: [
@@ -21,7 +22,16 @@ import { Tournament } from 'src/core/tournaments/entities/tournament.entity';
         username: configService.get('DATABASE_USER', 'postgres'),
         password: configService.get('DATABASE_PASSWORD', 'password'),
         database: configService.get('DATABASE_NAME', 'clutch_dev'),
-        entities: [Analytics, User, Session, Bet, Match, Team, Tournament],
+        entities: [
+          Analytics,
+          User,
+          Session,
+          Bet,
+          Match,
+          Team,
+          Tournament,
+          Player,
+        ],
         synchronize: true,
       }),
     }),
