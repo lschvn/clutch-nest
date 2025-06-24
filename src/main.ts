@@ -4,12 +4,32 @@ import { AnalyticsInterceptor } from './infrastructure/analytics/analytics.inter
 import { AnalyticsService } from './infrastructure/analytics/analytics.service';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
+import * as compression from 'compression';
 
 async function bootstrap() {
   // Use default HTTP adapter (Express)
   const app = await NestFactory.create(AppModule);
 
   const configService = app.get(ConfigService);
+
+  /**
+   * Compression middleware
+   *
+   * This middleware will compress the response body using Brotli compression
+   *
+   * @middleware
+   */
+  app.use(
+    compression({
+      level: 1,
+      filter: (req, res) => {
+        return (
+          compression.filter(req, res) &&
+          !!req.headers['accept-encoding']?.includes('br')
+        );
+      },
+    }),
+  );
 
   // Enable CORS for all origins
   app.enableCors({
