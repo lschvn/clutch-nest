@@ -184,7 +184,7 @@ export class ValorantService {
             this.playerRepository.create({
               name: player.name,
               game: Game.VALORANT,
-              teamId: savedTeam.id,
+              team: savedTeam,
               metadata: {
                 realName: player.realName,
                 country: player.country,
