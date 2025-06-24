@@ -40,8 +40,9 @@ export class AuthService {
 
     if (user.isTwoFactorAuthenticationEnabled) {
       // User has 2FA enabled, generate email code and signal client.
-      const emailCode =
-        await this.tfaService.generateAndCacheEmailLoginCode(user.id);
+      const emailCode = await this.tfaService.generateAndCacheEmailLoginCode(
+        user.id,
+      );
       this.eventEmitter.emit('auth.2fa.send_login_code', {
         email: user.email,
         name: user.name,

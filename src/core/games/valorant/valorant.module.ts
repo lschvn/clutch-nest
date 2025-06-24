@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { TeamsModule } from './teams/teams.module';
-import { PlayersModule } from './players/players.module';
-import { MatchesModule } from './matches/matches.module';
+import { ValorantService } from './valorant.service';
+import { VlrService } from './vlr/vlr.service';
 
 @Module({
-  imports: [TeamsModule, PlayersModule, MatchesModule]
+  imports: [],
+  providers: [ValorantService, VlrService],
+  exports: [ValorantService],
 })
 export class ValorantModule {}

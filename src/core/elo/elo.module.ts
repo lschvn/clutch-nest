@@ -3,6 +3,6 @@ import { EloService } from './elo.service';
 
 @Module({
   providers: [EloService],
-  exports: [EloService]
+  exports: [EloService],
 })
 export class EloModule {}

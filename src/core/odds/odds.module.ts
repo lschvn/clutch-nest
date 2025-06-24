@@ -4,6 +4,6 @@ import { EloModule } from '../elo/elo.module';
 
 @Module({
   providers: [OddsService],
-  imports: [EloModule]
+  imports: [EloModule],
 })
 export class OddsModule {}

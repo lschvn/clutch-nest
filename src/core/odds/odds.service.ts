@@ -21,24 +21,20 @@ import { Injectable } from '@nestjs/common';
  *
  * 5. Create and Store Odds:
  *    - The calculated odds are then stored in the database and associated with the corresponding match.
- * 
+ *
  * @requires EloService - This service is a dependency for handling Elo rating calculations.
  */
 @Injectable()
 export class OddsService {
+  /**
+   * Scheduled cron job
+   */
+  async getUpcomingMatches() {
+    const res = await fetch('https://vlrggapi.vercel.app/match?q=upcoming');
+    const data = await res.json();
 
-    /**
-     * Scheduled cron job 
-     */
-    async getUpcomingMatches() {
-        const res = await fetch("https://vlrggapi.vercel.app/match?q=upcoming")
-        const data = await res.json()
-
-        // check if team is present in our database, 
-        //      if yes, do nothing
-        //      if no, add to database and create elo based on all the matches
-
-        
-    }
-
+    // check if team is present in our database,
+    //      if yes, do nothing
+    //      if no, add to database and create elo based on all the matches
+  }
 }

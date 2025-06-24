@@ -5,9 +5,22 @@ import { UsersModule } from './users/users.module';
 import { OddsModule } from './odds/odds.module';
 import { EloModule } from './elo/elo.module';
 import { GamesModule } from './games/games.module';
+import { MatchesModule } from './matches/matches.module';
+import { TeamsModule } from './teams/teams.module';
+import { TournamentsModule } from './tournaments/tournaments.module';
 
 @Module({
-  imports: [AuthModule, BetModule, UsersModule, OddsModule, EloModule, GamesModule],
+  imports: [
+    AuthModule,
+    BetModule,
+    UsersModule,
+    OddsModule,
+    EloModule,
+    GamesModule,
+    MatchesModule,
+    TeamsModule,
+    TournamentsModule,
+  ],
   exports: [AuthModule, BetModule, UsersModule],
   providers: [],
 })

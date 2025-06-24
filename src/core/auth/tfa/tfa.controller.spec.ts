@@ -91,7 +91,10 @@ describe('TfaController', () => {
       userId: 1,
       twoFactorAuthenticationCode: '123456',
     };
-    const mockRequest = { ip: '127.0.0.1', headers: { 'user-agent': 'test-agent' } };
+    const mockRequest = {
+      ip: '127.0.0.1',
+      headers: { 'user-agent': 'test-agent' },
+    };
     // Ensure mockUserWithTfaEnabled also has created_at
     const mockUserWithTfaEnabled: User = {
       ...mockAuthenticatedUser,
@@ -101,11 +104,18 @@ describe('TfaController', () => {
     };
 
     it('should successfully authenticate with a valid code', async () => {
-      jest.spyOn(usersService, 'findOne').mockResolvedValue(mockUserWithTfaEnabled);
+      jest
+        .spyOn(usersService, 'findOne')
+        .mockResolvedValue(mockUserWithTfaEnabled);
       jest.spyOn(tfaService, 'verifyEmailLoginCode').mockResolvedValue(true);
-      jest.spyOn(sessionService, 'createSession').mockResolvedValue('mockSessionToken');
+      jest
+        .spyOn(sessionService, 'createSession')
+        .mockResolvedValue('mockSessionToken');
 
-      const result = await controller.authenticateTwoFactor(loginTfaDto, mockRequest);
+      const result = await controller.authenticateTwoFactor(
+        loginTfaDto,
+        mockRequest,
+      );
 
       expect(result).toEqual({
         sessionToken: 'mockSessionToken',
@@ -128,15 +138,22 @@ describe('TfaController', () => {
     });
 
     it('should throw BadRequestException if 2FA is not enabled for the user', async () => {
-      const userWith2faDisabled = { ...mockUserWithTfaEnabled, isTwoFactorAuthenticationEnabled: false };
-      jest.spyOn(usersService, 'findOne').mockResolvedValue(userWith2faDisabled);
+      const userWith2faDisabled = {
+        ...mockUserWithTfaEnabled,
+        isTwoFactorAuthenticationEnabled: false,
+      };
+      jest
+        .spyOn(usersService, 'findOne')
+        .mockResolvedValue(userWith2faDisabled);
       await expect(
         controller.authenticateTwoFactor(loginTfaDto, mockRequest),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw UnauthorizedException if the 2FA code is invalid', async () => {
-      jest.spyOn(usersService, 'findOne').mockResolvedValue(mockUserWithTfaEnabled);
+      jest
+        .spyOn(usersService, 'findOne')
+        .mockResolvedValue(mockUserWithTfaEnabled);
       jest.spyOn(tfaService, 'verifyEmailLoginCode').mockResolvedValue(false);
       await expect(
         controller.authenticateTwoFactor(loginTfaDto, mockRequest),
@@ -152,15 +169,20 @@ describe('TfaController', () => {
     } as unknown as Response;
 
     it('should successfully generate a secret and return OTP Auth URL', async () => {
-      const otpAuthUrl = 'otpauth://totp/YourApp:test@example.com?secret=MOCKSECRET&issuer=YourApp'; // Variable name matches
+      const otpAuthUrl =
+        'otpauth://totp/YourApp:test@example.com?secret=MOCKSECRET&issuer=YourApp'; // Variable name matches
       const secret = 'MOCKSECRET';
       // Corrected: use otpAuthUrl in mockResolvedValue
-      jest.spyOn(tfaService, 'generateTwoFactorAuthenticationSecret').mockResolvedValue({ otpauthUrl: otpAuthUrl, secret });
+      jest
+        .spyOn(tfaService, 'generateTwoFactorAuthenticationSecret')
+        .mockResolvedValue({ otpauthUrl: otpAuthUrl, secret });
       jest.spyOn(cacheManager, 'set').mockResolvedValue(undefined);
 
       await controller.generateSecret(mockRequest, mockResponse);
 
-      expect(tfaService.generateTwoFactorAuthenticationSecret).toHaveBeenCalledWith(mockAuthenticatedUser);
+      expect(
+        tfaService.generateTwoFactorAuthenticationSecret,
+      ).toHaveBeenCalledWith(mockAuthenticatedUser);
       expect(cacheManager.set).toHaveBeenCalledWith(
         `2fa_secret_${mockAuthenticatedUser.id}`,
         secret,
@@ -168,7 +190,9 @@ describe('TfaController', () => {
       );
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
       // Corrected: use otpAuthUrl in expectation
-      expect(mockResponse.json).toHaveBeenCalledWith({ otpauthUrl: otpAuthUrl });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        otpauthUrl: otpAuthUrl,
+      });
     });
   });
 
@@ -181,25 +205,41 @@ describe('TfaController', () => {
       jest.spyOn(cacheManager, 'get').mockResolvedValue(tempSecret);
       jest.spyOn(tfaService, 'isTwoFactorCodeValid').mockReturnValue(true);
       // Corrected mock return for usersService.update
-      jest.spyOn(usersService, 'update').mockResolvedValue({ affected: 1, raw: {}, generatedMaps: [] } as UpdateResult);
+      jest.spyOn(usersService, 'update').mockResolvedValue({
+        affected: 1,
+        raw: {},
+        generatedMaps: [],
+      } as UpdateResult);
       // Corrected mock return for cacheManager.del
       jest.spyOn(cacheManager, 'del').mockResolvedValue(Promise.resolve(true));
 
-      const result = await controller.turnOnTwoFactorAuthentication(mockRequest, tfaCodeDto);
+      const result = await controller.turnOnTwoFactorAuthentication(
+        mockRequest,
+        tfaCodeDto,
+      );
 
-      expect(result).toEqual({ message: 'Two-factor authentication has been enabled successfully.' });
-      // ... other assertions
-      expect(usersService.update).toHaveBeenCalledWith(mockAuthenticatedUser.id, {
-        twoFactorAuthenticationSecret: tempSecret,
-        isTwoFactorAuthenticationEnabled: true,
+      expect(result).toEqual({
+        message: 'Two-factor authentication has been enabled successfully.',
       });
+      // ... other assertions
+      expect(usersService.update).toHaveBeenCalledWith(
+        mockAuthenticatedUser.id,
+        {
+          twoFactorAuthenticationSecret: tempSecret,
+          isTwoFactorAuthenticationEnabled: true,
+        },
+      );
     });
 
     it('should throw BadRequestException if temporary secret not found', async () => {
       jest.spyOn(cacheManager, 'get').mockResolvedValue(null);
       await expect(
         controller.turnOnTwoFactorAuthentication(mockRequest, tfaCodeDto),
-      ).rejects.toThrow(new BadRequestException('2FA secret expired or not found. Please try generating a new QR code.'));
+      ).rejects.toThrow(
+        new BadRequestException(
+          '2FA secret expired or not found. Please try generating a new QR code.',
+        ),
+      );
     });
 
     it('should throw BadRequestException if 2FA code is invalid', async () => {
@@ -207,7 +247,9 @@ describe('TfaController', () => {
       jest.spyOn(tfaService, 'isTwoFactorCodeValid').mockReturnValue(false);
       await expect(
         controller.turnOnTwoFactorAuthentication(mockRequest, tfaCodeDto),
-      ).rejects.toThrow(new BadRequestException('Invalid two-factor authentication code.'));
+      ).rejects.toThrow(
+        new BadRequestException('Invalid two-factor authentication code.'),
+      );
     });
   });
 
@@ -226,16 +268,28 @@ describe('TfaController', () => {
       jest.spyOn(usersService, 'findOne').mockResolvedValue(userWithTfaEnabled);
       jest.spyOn(tfaService, 'isTwoFactorCodeValid').mockReturnValue(true);
       // Corrected mock return for usersService.update
-      jest.spyOn(usersService, 'update').mockResolvedValue({ affected: 1, raw: {}, generatedMaps: [] } as UpdateResult);
+      jest.spyOn(usersService, 'update').mockResolvedValue({
+        affected: 1,
+        raw: {},
+        generatedMaps: [],
+      } as UpdateResult);
 
-      const result = await controller.turnOffTwoFactorAuthentication(mockRequest, tfaCodeDto);
+      const result = await controller.turnOffTwoFactorAuthentication(
+        mockRequest,
+        tfaCodeDto,
+      );
 
-      expect(result).toEqual({ message: 'Two-factor authentication has been disabled successfully.' });
-      // ... other assertions
-       expect(usersService.update).toHaveBeenCalledWith(mockAuthenticatedUser.id, {
-        twoFactorAuthenticationSecret: null,
-        isTwoFactorAuthenticationEnabled: false,
+      expect(result).toEqual({
+        message: 'Two-factor authentication has been disabled successfully.',
       });
+      // ... other assertions
+      expect(usersService.update).toHaveBeenCalledWith(
+        mockAuthenticatedUser.id,
+        {
+          twoFactorAuthenticationSecret: null,
+          isTwoFactorAuthenticationEnabled: false,
+        },
+      );
     });
 
     it('should throw NotFoundException if user not found', async () => {
@@ -246,19 +300,41 @@ describe('TfaController', () => {
     });
 
     it('should throw BadRequestException if 2FA is not enabled', async () => {
-      const userWithTfaDisabled = { ...mockAuthenticatedUser, isTwoFactorAuthenticationEnabled: false, twoFactorAuthenticationSecret: null, created_at: mockAuthenticatedUser.created_at };
-      jest.spyOn(usersService, 'findOne').mockResolvedValue(userWithTfaDisabled);
+      const userWithTfaDisabled = {
+        ...mockAuthenticatedUser,
+        isTwoFactorAuthenticationEnabled: false,
+        twoFactorAuthenticationSecret: null,
+        created_at: mockAuthenticatedUser.created_at,
+      };
+      jest
+        .spyOn(usersService, 'findOne')
+        .mockResolvedValue(userWithTfaDisabled);
       await expect(
         controller.turnOffTwoFactorAuthentication(mockRequest, tfaCodeDto),
-      ).rejects.toThrow(new BadRequestException('Two-factor authentication is not currently enabled for this account.'));
+      ).rejects.toThrow(
+        new BadRequestException(
+          'Two-factor authentication is not currently enabled for this account.',
+        ),
+      );
     });
 
     it('should throw BadRequestException if 2FA is enabled but secret is missing (data inconsistency)', async () => {
-      const userWithTfaEnabledNoSecret = { ...mockAuthenticatedUser, isTwoFactorAuthenticationEnabled: true, twoFactorAuthenticationSecret: null, created_at: mockAuthenticatedUser.created_at };
-      jest.spyOn(usersService, 'findOne').mockResolvedValue(userWithTfaEnabledNoSecret);
-       await expect(
+      const userWithTfaEnabledNoSecret = {
+        ...mockAuthenticatedUser,
+        isTwoFactorAuthenticationEnabled: true,
+        twoFactorAuthenticationSecret: null,
+        created_at: mockAuthenticatedUser.created_at,
+      };
+      jest
+        .spyOn(usersService, 'findOne')
+        .mockResolvedValue(userWithTfaEnabledNoSecret);
+      await expect(
         controller.turnOffTwoFactorAuthentication(mockRequest, tfaCodeDto),
-      ).rejects.toThrow(new BadRequestException('Two-factor authentication is not currently enabled for this account.'));
+      ).rejects.toThrow(
+        new BadRequestException(
+          'Two-factor authentication is not currently enabled for this account.',
+        ),
+      );
     });
 
     it('should throw BadRequestException if 2FA code is invalid', async () => {
@@ -266,7 +342,9 @@ describe('TfaController', () => {
       jest.spyOn(tfaService, 'isTwoFactorCodeValid').mockReturnValue(false);
       await expect(
         controller.turnOffTwoFactorAuthentication(mockRequest, tfaCodeDto),
-      ).rejects.toThrow(new BadRequestException('Invalid two-factor authentication code.'));
+      ).rejects.toThrow(
+        new BadRequestException('Invalid two-factor authentication code.'),
+      );
     });
   });
 });

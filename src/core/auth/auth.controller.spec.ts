@@ -7,7 +7,12 @@ import { SessionService } from './session/session.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 // Removed incorrect LoginDto import
-import { BadRequestException, UnauthorizedException, HttpStatus, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  UnauthorizedException,
+  HttpStatus,
+  NotFoundException,
+} from '@nestjs/common';
 import { User } from '../users/entities/user.entity';
 import { Request } from 'express';
 import { UpdateResult } from 'typeorm'; // Added import for UpdateResult
@@ -61,14 +66,14 @@ describe('AuthController', () => {
     // bets: [], // Removed as it's not in User entity
   };
 
-  const mockMinimalUserForSignUpReturn = { // For signUp mock return
-      id: 2,
-      email: 'new@example.com',
-      name: 'New User',
-      role: 'user',
-      verified: false,
+  const mockMinimalUserForSignUpReturn = {
+    // For signUp mock return
+    id: 2,
+    email: 'new@example.com',
+    name: 'New User',
+    role: 'user',
+    verified: false,
   };
-
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -104,7 +109,10 @@ describe('AuthController', () => {
       email: 'test@example.com',
       password: 'password123',
     };
-    const mockReq = { ip: '127.0.0.1', headers: { 'user-agent': 'test-agent' } } as any;
+    const mockReq = {
+      ip: '127.0.0.1',
+      headers: { 'user-agent': 'test-agent' },
+    } as any;
 
     it('should successfully sign in a user and return access token and user details', async () => {
       const mockLoginResult = {
@@ -143,9 +151,13 @@ describe('AuthController', () => {
     });
 
     it('should throw UnauthorizedException on login failure', async () => {
-      jest.spyOn(authService, 'signIn').mockRejectedValue(new UnauthorizedException('Invalid credentials'));
+      jest
+        .spyOn(authService, 'signIn')
+        .mockRejectedValue(new UnauthorizedException('Invalid credentials'));
 
-      await expect(controller.signIn(signInDto, mockReq)).rejects.toThrow(UnauthorizedException);
+      await expect(controller.signIn(signInDto, mockReq)).rejects.toThrow(
+        UnauthorizedException,
+      );
       expect(authService.signIn).toHaveBeenCalledWith(
         signInDto.email,
         signInDto.password,
@@ -161,16 +173,21 @@ describe('AuthController', () => {
       email: 'new@example.com',
       password: 'newPassword123',
     };
-    const mockReq = { ip: '127.0.0.1', headers: { 'user-agent': 'test-agent' } } as any;
+    const mockReq = {
+      ip: '127.0.0.1',
+      headers: { 'user-agent': 'test-agent' },
+    } as any;
 
     // Corrected mockSignedUpUser to include all required fields
     const mockSignedUpUserResponse = {
-        sessionToken: 'mockSessionTokenForSignUp',
-        user: mockMinimalUserForSignUpReturn, // Using the minimal complete user object
+      sessionToken: 'mockSessionTokenForSignUp',
+      user: mockMinimalUserForSignUpReturn, // Using the minimal complete user object
     };
 
     it('should successfully register a new user and emit welcome event', async () => {
-      jest.spyOn(authService, 'signUp').mockResolvedValue(mockSignedUpUserResponse);
+      jest
+        .spyOn(authService, 'signUp')
+        .mockResolvedValue(mockSignedUpUserResponse);
       const result = await controller.signUp(createUserDto, mockReq);
 
       expect(result).toEqual(mockSignedUpUserResponse);
@@ -188,9 +205,13 @@ describe('AuthController', () => {
     });
 
     it('should throw BadRequestException on registration failure (e.g., email exists)', async () => {
-      jest.spyOn(authService, 'signUp').mockRejectedValue(new BadRequestException('Email already exists'));
+      jest
+        .spyOn(authService, 'signUp')
+        .mockRejectedValue(new BadRequestException('Email already exists'));
 
-      await expect(controller.signUp(createUserDto, mockReq)).rejects.toThrow(BadRequestException);
+      await expect(controller.signUp(createUserDto, mockReq)).rejects.toThrow(
+        BadRequestException,
+      );
       expect(authService.signUp).toHaveBeenCalledWith(
         createUserDto.name,
         createUserDto.email,
@@ -213,8 +234,12 @@ describe('AuthController', () => {
   describe('logout', () => {
     it('should call sessionService.invalidateSession with the token if present', async () => {
       const mockToken = 'mocktoken123';
-      const reqWithToken = { headers: { authorization: `Bearer ${mockToken}` } } as unknown as Request;
-      jest.spyOn(sessionService, 'invalidateSession').mockResolvedValue(undefined);
+      const reqWithToken = {
+        headers: { authorization: `Bearer ${mockToken}` },
+      } as unknown as Request;
+      jest
+        .spyOn(sessionService, 'invalidateSession')
+        .mockResolvedValue(undefined);
       await controller.logout(reqWithToken);
       expect(sessionService.invalidateSession).toHaveBeenCalledWith(mockToken);
     });
@@ -227,13 +252,17 @@ describe('AuthController', () => {
     });
 
     it('should not call sessionService.invalidateSession if authorization header is not Bearer token', async () => {
-      const reqWithBadToken = { headers: { authorization: 'Basic NNN' } } as unknown as Request;
+      const reqWithBadToken = {
+        headers: { authorization: 'Basic NNN' },
+      } as unknown as Request;
       await controller.logout(reqWithBadToken);
       expect(sessionService.invalidateSession).not.toHaveBeenCalled();
     });
 
     it('should not call sessionService.invalidateSession if Bearer token is empty', async () => {
-      const reqWithEmptyBearer = { headers: { authorization: 'Bearer ' } } as unknown as Request;
+      const reqWithEmptyBearer = {
+        headers: { authorization: 'Bearer ' },
+      } as unknown as Request;
       await controller.logout(reqWithEmptyBearer);
       expect(sessionService.invalidateSession).not.toHaveBeenCalled();
     });
@@ -267,13 +296,22 @@ describe('AuthController', () => {
 
     it('should send a password reset email successfully', async () => {
       jest.spyOn(usersService, 'getByEmail').mockResolvedValue(mockUser);
-      jest.spyOn(authService, 'generateResetToken').mockResolvedValue('mockResetToken');
+      jest
+        .spyOn(authService, 'generateResetToken')
+        .mockResolvedValue('mockResetToken');
       jest.spyOn(configService, 'get').mockReturnValue('http://localhost:3000');
       const result = await controller.resetPassword(resetPasswordPayload);
 
-      expect(result).toEqual({ message: 'If your email address is in our database, you will receive a password reset link shortly.' });
-      expect(usersService.getByEmail).toHaveBeenCalledWith(resetPasswordPayload.email);
-      expect(authService.generateResetToken).toHaveBeenCalledWith(resetPasswordPayload.email);
+      expect(result).toEqual({
+        message:
+          'If your email address is in our database, you will receive a password reset link shortly.',
+      });
+      expect(usersService.getByEmail).toHaveBeenCalledWith(
+        resetPasswordPayload.email,
+      );
+      expect(authService.generateResetToken).toHaveBeenCalledWith(
+        resetPasswordPayload.email,
+      );
       expect(configService.get).toHaveBeenCalledWith('APP_WEB_URL');
       expect(eventEmitter.emit).toHaveBeenCalledWith('user.reset-password', {
         name: mockUser.name,
@@ -284,38 +322,69 @@ describe('AuthController', () => {
 
     it('should throw NotFoundException if user with email does not exist', async () => {
       jest.spyOn(usersService, 'getByEmail').mockResolvedValue(null);
-      await expect(controller.resetPassword(resetPasswordPayload)).rejects.toThrow(NotFoundException);
+      await expect(
+        controller.resetPassword(resetPasswordPayload),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('verifyResetPassword', () => {
-    const verifyResetPasswordPayload = { token: 'validtoken', password: 'newPassword123' };
+    const verifyResetPasswordPayload = {
+      token: 'validtoken',
+      password: 'newPassword123',
+    };
 
     it('should successfully verify token, update password, and delete token', async () => {
-      jest.spyOn(authService, 'verifyResetToken').mockResolvedValue(mockUser.email);
+      jest
+        .spyOn(authService, 'verifyResetToken')
+        .mockResolvedValue(mockUser.email);
       jest.spyOn(usersService, 'getByEmail').mockResolvedValue(mockUser);
       // Corrected mock return for updatePassword
-      jest.spyOn(usersService, 'updatePassword').mockResolvedValue({ affected: 1, raw: {}, generatedMaps: [] } as UpdateResult);
+      jest.spyOn(usersService, 'updatePassword').mockResolvedValue({
+        affected: 1,
+        raw: {},
+        generatedMaps: [],
+      } as UpdateResult);
       jest.spyOn(authService, 'deleteResetToken').mockResolvedValue(undefined);
 
-      const result = await controller.verifyResetPassword(verifyResetPasswordPayload);
+      const result = await controller.verifyResetPassword(
+        verifyResetPasswordPayload,
+      );
 
-      expect(result).toEqual({ email: mockUser.email, message: 'Password reset successfully.' });
-      expect(authService.verifyResetToken).toHaveBeenCalledWith(verifyResetPasswordPayload.token);
+      expect(result).toEqual({
+        email: mockUser.email,
+        message: 'Password reset successfully.',
+      });
+      expect(authService.verifyResetToken).toHaveBeenCalledWith(
+        verifyResetPasswordPayload.token,
+      );
       expect(usersService.getByEmail).toHaveBeenCalledWith(mockUser.email);
-      expect(usersService.updatePassword).toHaveBeenCalledWith(mockUser.id, verifyResetPasswordPayload.password);
-      expect(authService.deleteResetToken).toHaveBeenCalledWith(verifyResetPasswordPayload.token);
+      expect(usersService.updatePassword).toHaveBeenCalledWith(
+        mockUser.id,
+        verifyResetPasswordPayload.password,
+      );
+      expect(authService.deleteResetToken).toHaveBeenCalledWith(
+        verifyResetPasswordPayload.token,
+      );
     });
 
     it('should throw NotFoundException if reset token is invalid or expired', async () => {
       jest.spyOn(authService, 'verifyResetToken').mockResolvedValue(null);
-      await expect(controller.verifyResetPassword(verifyResetPasswordPayload)).rejects.toThrow(new NotFoundException('Invalid or expired password reset token.'));
+      await expect(
+        controller.verifyResetPassword(verifyResetPasswordPayload),
+      ).rejects.toThrow(
+        new NotFoundException('Invalid or expired password reset token.'),
+      );
     });
 
     it('should throw NotFoundException if user associated with token is not found', async () => {
-      jest.spyOn(authService, 'verifyResetToken').mockResolvedValue('email.that.does.not.exist@example.com');
+      jest
+        .spyOn(authService, 'verifyResetToken')
+        .mockResolvedValue('email.that.does.not.exist@example.com');
       jest.spyOn(usersService, 'getByEmail').mockResolvedValue(null);
-      await expect(controller.verifyResetPassword(verifyResetPasswordPayload)).rejects.toThrow(new NotFoundException('User not found.'));
+      await expect(
+        controller.verifyResetPassword(verifyResetPasswordPayload),
+      ).rejects.toThrow(new NotFoundException('User not found.'));
     });
   });
 
@@ -324,14 +393,24 @@ describe('AuthController', () => {
 
     it('should send a verification email successfully', async () => {
       jest.spyOn(usersService, 'getByEmail').mockResolvedValue(mockUser);
-      jest.spyOn(authService, 'generateResetToken').mockResolvedValue('mockVerificationToken');
+      jest
+        .spyOn(authService, 'generateResetToken')
+        .mockResolvedValue('mockVerificationToken');
       jest.spyOn(configService, 'get').mockReturnValue('http://localhost:3000');
 
-      const result = await controller.sendVerifiedEmail(sendVerificationEmailPayload);
+      const result = await controller.sendVerifiedEmail(
+        sendVerificationEmailPayload,
+      );
 
-      expect(result).toEqual({ message: 'Verification email sent. Please check your inbox.' });
-      expect(usersService.getByEmail).toHaveBeenCalledWith(sendVerificationEmailPayload.email);
-      expect(authService.generateResetToken).toHaveBeenCalledWith(sendVerificationEmailPayload.email);
+      expect(result).toEqual({
+        message: 'Verification email sent. Please check your inbox.',
+      });
+      expect(usersService.getByEmail).toHaveBeenCalledWith(
+        sendVerificationEmailPayload.email,
+      );
+      expect(authService.generateResetToken).toHaveBeenCalledWith(
+        sendVerificationEmailPayload.email,
+      );
       expect(configService.get).toHaveBeenCalledWith('APP_WEB_URL');
       expect(eventEmitter.emit).toHaveBeenCalledWith('user.verify-email', {
         name: mockUser.name,
@@ -342,7 +421,9 @@ describe('AuthController', () => {
 
     it('should throw NotFoundException if user for verification email does not exist', async () => {
       jest.spyOn(usersService, 'getByEmail').mockResolvedValue(null);
-      await expect(controller.sendVerifiedEmail(sendVerificationEmailPayload)).rejects.toThrow(NotFoundException);
+      await expect(
+        controller.sendVerifiedEmail(sendVerificationEmailPayload),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -350,30 +431,51 @@ describe('AuthController', () => {
     const verifyEmailPayload = { token: 'validVerificationToken' };
 
     it('should successfully verify email, update user, and delete token', async () => {
-      jest.spyOn(authService, 'verifyResetToken').mockResolvedValue(mockUser.email);
+      jest
+        .spyOn(authService, 'verifyResetToken')
+        .mockResolvedValue(mockUser.email);
       jest.spyOn(usersService, 'getByEmail').mockResolvedValue(mockUser);
       // Corrected mock return for update
-      jest.spyOn(usersService, 'update').mockResolvedValue({ affected: 1, raw: {}, generatedMaps: [] } as UpdateResult);
+      jest.spyOn(usersService, 'update').mockResolvedValue({
+        affected: 1,
+        raw: {},
+        generatedMaps: [],
+      } as UpdateResult);
       jest.spyOn(authService, 'deleteResetToken').mockResolvedValue(undefined);
 
       const result = await controller.verifyEmail(verifyEmailPayload);
 
-      expect(result).toEqual({ email: mockUser.email, message: 'Email verified successfully.' });
-      expect(authService.verifyResetToken).toHaveBeenCalledWith(verifyEmailPayload.token);
+      expect(result).toEqual({
+        email: mockUser.email,
+        message: 'Email verified successfully.',
+      });
+      expect(authService.verifyResetToken).toHaveBeenCalledWith(
+        verifyEmailPayload.token,
+      );
       expect(usersService.getByEmail).toHaveBeenCalledWith(mockUser.email);
-      expect(usersService.update).toHaveBeenCalledWith(mockUser.id, { verified: true });
-      expect(authService.deleteResetToken).toHaveBeenCalledWith(verifyEmailPayload.token);
+      expect(usersService.update).toHaveBeenCalledWith(mockUser.id, {
+        verified: true,
+      });
+      expect(authService.deleteResetToken).toHaveBeenCalledWith(
+        verifyEmailPayload.token,
+      );
     });
 
     it('should throw NotFoundException if verification token is invalid or expired', async () => {
       jest.spyOn(authService, 'verifyResetToken').mockResolvedValue(null);
-      await expect(controller.verifyEmail(verifyEmailPayload)).rejects.toThrow(new NotFoundException('Invalid or expired verification token.')); // Corrected message
+      await expect(controller.verifyEmail(verifyEmailPayload)).rejects.toThrow(
+        new NotFoundException('Invalid or expired verification token.'),
+      ); // Corrected message
     });
 
     it('should throw NotFoundException if user for verification token is not found', async () => {
-      jest.spyOn(authService, 'verifyResetToken').mockResolvedValue('unverified.user@example.com');
+      jest
+        .spyOn(authService, 'verifyResetToken')
+        .mockResolvedValue('unverified.user@example.com');
       jest.spyOn(usersService, 'getByEmail').mockResolvedValue(null);
-      await expect(controller.verifyEmail(verifyEmailPayload)).rejects.toThrow(new NotFoundException('User not found.'));
+      await expect(controller.verifyEmail(verifyEmailPayload)).rejects.toThrow(
+        new NotFoundException('User not found.'),
+      );
     });
   });
 });
