@@ -147,7 +147,6 @@ erDiagram
     Team ||--o{ Bet : "est prédit gagnant dans"
     Player ||..o{ EloHistory : "a un historique"
     Team ||..o{ EloHistory : "a un historique"
-    User ||--o{ Analytics : "génère"
 }
 ```
 
