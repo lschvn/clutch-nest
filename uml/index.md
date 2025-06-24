@@ -1,75 +1,89 @@
-# Clutch
+# Clutch: Architecture et Modèle de Données
 
-Une application pour faire des paris sur l'esport
+## 1. Introduction
 
+Clutch est une application innovante de paris sur l'esport. L'objectif principal est de fournir une plateforme permettant aux utilisateurs de placer des paris sur des matchs d'esports professionnels.
 
-Pour l'instant des paris gratuits. 
+Initialement, l'application se concentrera sur les **paris gratuits** pour constituer une base d'utilisateurs et affiner les mécanismes de base. Le premier jeu à être intégré sera **Valorant**, avec des données provenant de [vlr.gg](https://www.vlr.gg/).
 
-Déjà il faut créer l'uml. C'est à dire la manière dont on va travailler le code tout au long du projet. 
+## 2. Architecture
 
-Pour commencer je vais devoir rendre le code adaptable a plusieurs jeux dans le futur. 
+L'application est conçue avec une architecture multi-jeux évolutive. Cela garantit que de nouveaux jeux pourront être facilement intégrés à l'avenir avec des modifications minimales de l'infrastructure de base.
 
-pour le rendre très adaptables aux différents jeux, on va utiliser une architecture comme suit : 
+### 2.1. Principes Fondamentaux
+
+- **Modularité** : Les fonctionnalités de base (paris, gestion des utilisateurs, calcul ELO) sont découplées de la logique spécifique au jeu.
+- **Évolutivité** (Scalability) : L'architecture est conçue pour gérer un nombre croissant d'utilisateurs, de jeux et de matchs.
+- **Extensibilité** : L'ajout d'un nouveau jeu devrait être aussi simple que la création d'un nouveau module dans le répertoire `games`.
+
+### 2.2. Structure des Dossiers
+
+La structure de dossiers de haut niveau proposée est la suivante :
 
 ```
-/core                       --> dossier principal
-    /games                  --> dossier des jeux
-        /valorant
-            /teams
-            /matches
-            /players
-            /tournaments
-    /bet                    --> dossier avec les controllers pour créer un bet du style POST : /bet/{game}/{match_id}
-    /elo                    --> dossier avec la logique de l'élo, calculer les côtes
-    /odds                   --> 
+/src
+├── /core                   # Logique métier principale
+│   ├── /auth               # Authentification et gestion des sessions
+│   ├── /bet                # Système de paris
+│   ├── /elo                # Moteur de calcul ELO et des cotes
+│   ├── /games              # Modules spécifiques aux jeux
+│   │   └── /valorant       # Exemple pour Valorant
+│   │       ├── /matches
+│   │       ├── /players
+│   │       └── /teams
+│   └── /users              # Gestion des utilisateurs
+└── /infrastructure         # Préoccupations transversales (base de données, mailer, etc.)
 ```
 
-Je vais déjà commencer par travailler sur valorant. 
+### 2.3. Flux de Données : Traitement des Matchs
 
-Donc on aura des tables comme suits : 
+Le système récupère en continu les données des matchs à venir. Le flux typique pour le traitement d'un nouveau match est le suivant :
 
-- users
-- sessions
-- tfa
-- bet (donc la pièce maîtresse de ce logiciel)
+1.  **Récupération des Données du Match** : une tâche planifiée récupère les données des matchs à venir à partir d'une API externe (par exemple, vlr.gg pour Valorant).
+2.  **Vérification des Entités Existantes** : Le système vérifie si les équipes et les joueurs impliqués dans le match existent déjà dans la base de données.
+3.  **Création de Nouvelles Entités** : Si une équipe ou un joueur est nouveau, il est ajouté à la base de données.
+4.  **Calcul des Cotes** : Le service ELO calcule le classement ELO initial pour les nouvelles entités et met à jour les cotes pour le match.
+5.  **Rendre le Match Disponible aux Paris** : Le match est ensuite rendu disponible sur la plateforme pour que les utilisateurs puissent y placer des paris.
 
-ensuite les tables pour chaque jeux (val pour valorant) : 
+## 3. Schéma de la Base de Données
 
-- val_matchs
-- val_players
-- val_teams
-- val_tournaments
-
-en gros le but c'est de fetch un endpoint qui va te donner des info sur les matchs upcoming, 
-et si on a déjà la team, avec les players en bdd, alors on touche a rien, sinon on va faire l'élo etc.. 
-comme ça dès qu'une nouvelle équipe va jouer, elle doit avoir son odds, et son élo grâce a notre système.
-
-Le système se base sur les données disponibles sur vlr.gg pour valorant. 
-
-Maintenant voici un diagramme de classe pour bien comprendre comment fonctionnerait le core de l'application
-
+Le diagramme suivant illustre les relations entre les entités principales de la base de données.
 
 ```mermaid
+erDiagram
+    User {
+        number id PK
+        string email UK
+        string name
+        string password
+        boolean verified
+        string role
+        boolean isTwoFactorAuthenticationEnabled
+        string twoFactorAuthenticationSecret
+        Date created_at
+        Date updated_at
+    }
 
-class Bet {}
+    Session {
+        number id PK
+        number userId FK
+        string token UK
+        string ipAddress
+        string userAgent
+        Date lastUsedAt
+        Date expiresAt
+    }
 
-class Elo {}
+    val_match {
+        number id PK
+        string team_a
+        string team_b
+    }
 
-class Odds {}
+    Bet {
+    }
 
-class ValMatch {}
-
-class ValTeam {}
-
-class ValPlayer {
-    name: string
-}
-
+    User ||--o{ Session : "a"
 ```
 
 
-## Base de donnée 
-
-
-
-## Structure de fichiers
