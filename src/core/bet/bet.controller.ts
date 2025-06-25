@@ -6,18 +6,26 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import { BetService } from './bet.service';
 import { CreateBetDto } from './dto/create-bet.dto';
 import { UpdateBetDto } from './dto/update-bet.dto';
+import { AuthGuard } from '../auth/auth.guard';
+import { AuthentificatedRequest } from 'express';
 
 @Controller('bet')
 export class BetController {
   constructor(private readonly betService: BetService) {}
 
+  @UseGuards(AuthGuard)
   @Post()
-  create(@Body() createBetDto: CreateBetDto) {
-    return this.betService.create(createBetDto);
+  create(
+    @Body() createBetDto: CreateBetDto,
+    @Request() req: AuthentificatedRequest,
+  ) {
+    return this.betService.create(createBetDto, req.user);
   }
 
   @Get()

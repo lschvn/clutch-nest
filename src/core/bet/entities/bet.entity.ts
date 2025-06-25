@@ -24,12 +24,18 @@ export class Bet {
   @JoinColumn({ name: 'match_id' })
   match: Match;
 
+  /**
+   * The team that the user has bet on.
+   */
   @ManyToOne(() => Team)
   @JoinColumn({ name: 'betted_team_id' })
   bettedTeam: Team;
 
+  /**
+   * The number of tokens that the user has bet on the match.
+   */
   @Column({ type: 'int' })
-  tokens: number;
+  amount: number;
 
   @Column({ type: 'float' })
   odds: number; // Store the odds at which the bet was placed

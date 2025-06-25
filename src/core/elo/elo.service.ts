@@ -25,6 +25,8 @@ export interface EloMatch {
   mapsB: number;
 }
 
+// TODO: change from last x days to last x matches
+
 /**
  * A service that implements a dynamic Elo rating system for teams.
  * It processes a chronological list of matches to maintain and update team ratings,

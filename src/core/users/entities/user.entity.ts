@@ -30,6 +30,10 @@ export class User {
   @Column({ type: 'text', nullable: true })
   twoFactorAuthenticationSecret: string | null;
 
+  // TODO: every 24 hours, the balance should add 100 if the user come to the app
+  @Column({ default: 1000 })
+  balance: number;
+
   @Column({ default: new Date() })
   created_at: Date;
 
