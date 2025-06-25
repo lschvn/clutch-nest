@@ -8,6 +8,7 @@ import { MatchesModule } from './matches/matches.module';
 import { TeamsModule } from './teams/teams.module';
 import { TournamentsModule } from './tournaments/tournaments.module';
 import { PlayersModule } from './players/players.module';
+import { BonusModule } from './bonus/bonus.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { PlayersModule } from './players/players.module';
     TeamsModule,
     TournamentsModule,
     PlayersModule,
+    BonusModule,
   ],
   exports: [AuthModule, BetModule, UsersModule],
   providers: [],

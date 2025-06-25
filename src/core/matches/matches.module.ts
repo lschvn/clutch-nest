@@ -6,7 +6,7 @@ import { MatchesService } from './matches.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Match])],
-  exports: [TypeOrmModule],
+  exports: [TypeOrmModule, MatchesService],
   controllers: [MatchesController],
   providers: [MatchesService],
 })

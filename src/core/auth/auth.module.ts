@@ -8,6 +8,7 @@ import { CacheModule } from '@nestjs/cache-manager'; // import CacheModule for C
 import { ConfigModule } from '@nestjs/config';
 import { SessionModule } from './session/session.module'; // Provide SessionService
 import { TfaModule } from './tfa/tfa.module'; // Provide TfaService
+import { AuthGuard } from './auth.guard';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { TfaModule } from './tfa/tfa.module'; // Provide TfaService
     TfaModule, // So AuthService can inject TfaService & handlers
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, AuthGuard],
+  exports: [AuthService, SessionModule, AuthGuard],
 })
 export class AuthModule {}

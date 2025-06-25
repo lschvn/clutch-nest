@@ -34,6 +34,13 @@ export class User {
   @Column({ default: 1000 })
   balance: number;
 
+  @Column({
+    type: 'timestamp with time zone',
+    nullable: true,
+    default: null,
+  })
+  lastConnection: Date | null;
+
   @Column({ default: new Date() })
   created_at: Date;
 

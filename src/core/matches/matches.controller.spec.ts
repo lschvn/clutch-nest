@@ -44,7 +44,9 @@ describe('MatchesController', () => {
       const result = await controller.getUpcoming(Game.VALORANT);
 
       expect(result).toEqual(mockMatches);
-      expect(mockMatchesService.getUpcoming).toHaveBeenCalledWith(Game.VALORANT);
+      expect(mockMatchesService.getUpcoming).toHaveBeenCalledWith(
+        Game.VALORANT,
+      );
     });
   });
 

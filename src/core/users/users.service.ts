@@ -73,4 +73,25 @@ export class UsersService {
   async remove(id: number): Promise<DeleteResult> {
     return await this.delete(id);
   }
+
+  async grantDailyBonus(userId: number): Promise<User | null> {
+    const user = await this.usersRepository.findOneBy({ id: userId });
+    if (!user) return null;
+
+    const now = new Date();
+    const lastConnection = user.lastConnection;
+
+    const shouldAwardBonus =
+      !lastConnection ||
+      (now.getTime() - lastConnection.getTime()) / (1000 * 60 * 60) >= 24;
+
+    if (shouldAwardBonus) {
+      user.balance += 100;
+      user.lastConnection = now;
+      await this.usersRepository.save(user);
+      return user;
+    }
+
+    return null;
+  }
 }
