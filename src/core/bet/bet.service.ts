@@ -11,6 +11,7 @@ import { MatchStatus } from '../matches/enums/matches.enum';
 import { Bet } from './entities/bet.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class BetService {
@@ -18,12 +19,17 @@ export class BetService {
     private readonly matchService: MatchesService,
     @InjectRepository(Bet)
     private readonly betRepository: Repository<Bet>,
+    private readonly usersService: UsersService,
   ) {}
 
-  async create(createBetDto: CreateBetDto, user: User) {
+  async create(createBetDto: CreateBetDto, partialUser: Partial<User>) {
     // need to check if user is logged in
-    if (!user) {
+    if (!partialUser?.id) {
       throw new UnauthorizedException('User is not logged in');
+    }
+    const user = await this.usersService.findOne(partialUser.id);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
     }
 
     // need to check if the user has enough tokens to bet
