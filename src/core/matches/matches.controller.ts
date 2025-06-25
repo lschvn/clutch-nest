@@ -1,4 +1,10 @@
-import { Controller, Get, Param, ParseEnumPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseEnumPipe,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { MatchesService } from './matches.service';
 import { Game } from '../games/enums/game.enum';
 import { Match } from './entities/match.entity';
@@ -21,5 +27,20 @@ export class MatchesController {
     @Param('game', new ParseEnumPipe(Game)) game: Game,
   ): Promise<Match[]> {
     return this.matchesService.getUpcoming(game);
+  }
+
+  /**
+   * GET /matches/:game/:id
+   * Retrieves a match by its ID.
+   * @param game The game to fetch the match for (e.g., 'valorant').
+   * @param id The ID of the match to retrieve.
+   * @returns A promise that resolves to the Match entity.
+   */
+  @Get(':game/:id')
+  async getById(
+    @Param('game', new ParseEnumPipe(Game)) game: Game,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<Match> {
+    return this.matchesService.getById(id);
   }
 }

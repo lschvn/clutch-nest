@@ -41,4 +41,13 @@ export class MatchesService {
       },
     });
   }
+
+  /**
+   * Retrieves a match by its ID.
+   * @param id The ID of the match to retrieve.
+   * @returns A promise that resolves to the Match entity.
+   */
+  async getById(id: number): Promise<Match> {
+    return this.matchRepository.findOneByOrFail({ id });
+  }
 }
