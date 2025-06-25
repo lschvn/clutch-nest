@@ -28,23 +28,31 @@ export class BetController {
     return this.betService.create(createBetDto, req.user);
   }
 
+  @UseGuards(AuthGuard)
   @Get()
-  findAll() {
-    return this.betService.findAll();
+  findAll(@Request() req: AuthentificatedRequest) {
+    return this.betService.findAll(req.user);
   }
 
+  @UseGuards(AuthGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.betService.findOne(+id);
+  findOne(@Param('id') id: string, @Request() req: AuthentificatedRequest) {
+    return this.betService.findOne(+id, req.user);
   }
 
+  @UseGuards(AuthGuard)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateBetDto: UpdateBetDto) {
-    return this.betService.update(+id, updateBetDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateBetDto: UpdateBetDto,
+    @Request() req: AuthentificatedRequest,
+  ) {
+    return this.betService.update(+id, updateBetDto, req.user);
   }
 
+  @UseGuards(AuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.betService.remove(+id);
+  remove(@Param('id') id: string, @Request() req: AuthentificatedRequest) {
+    return this.betService.remove(+id, req.user);
   }
 }
