@@ -29,7 +29,16 @@ export class MatchesService {
       order: {
         startsAt: 'ASC',
       },
-      relations: ['teamA', 'teamB', 'tournament', 'winnerTeam'],
+      relations: {
+        teamA: {
+          players: true,
+        },
+        teamB: {
+          players: true,
+        },
+        tournament: true,
+        winnerTeam: true,
+      },
     });
   }
 }
