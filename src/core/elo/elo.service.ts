@@ -69,9 +69,7 @@ export class EloService {
       return 'S';
     }
     if (
-      /(challengers.*(playoffs|final))|(game changers.*(main stage|final))/i.test(
-        lowerName,
-      )
+      /(playoffs|final)|(game changers.*(main stage|final))/i.test(lowerName)
     ) {
       return 'A';
     }
@@ -140,6 +138,6 @@ export class EloService {
    */
   private _daysSinceLast(team: string, date: Date): number {
     const last = this.lastPlayed.get(team);
-    return last ? (date.getTime() - last.getTime()) / 86_400_000 : Infinity;
+    return last ? (date.getTime() - last.getTime()) / 86_400_000 : 0;
   }
 }

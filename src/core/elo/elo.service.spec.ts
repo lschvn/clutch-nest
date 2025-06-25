@@ -208,10 +208,10 @@ describe('EloService', () => {
       const eloB = newRatings.get('Team B')!; // Wins first.
       const eloC = newRatings.get('Team C')!; // Loses second.
 
-      // After B > A, Elo A < 1000, Elo B > 1000.
-      // Then A > C (who is at 1000). A will gain points back.
-      // Final Elo A should be slightly below 1000.
-      expect(eloA).toBeLessThan(1000);
+      // After B > A, Elo A < 1000.
+      // Then A (as underdog) > C (who is at 1000). A will gain significant points back.
+      // Final Elo A should be slightly above 1000.
+      expect(eloA).toBeGreaterThan(1000);
       expect(eloB).toBeGreaterThan(1000);
       expect(eloC).toBeLessThan(1000);
     });

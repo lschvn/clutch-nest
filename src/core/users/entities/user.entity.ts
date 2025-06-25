@@ -1,6 +1,8 @@
 import { Exclude } from 'class-transformer';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
+// TODO: Add a column and the logic to store the user's balance
+// TODO: Add a column and the logic to store the user's avatar
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()

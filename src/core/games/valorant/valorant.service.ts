@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { VlrService } from './vlr/vlr.service';
-import { MatchStatus } from 'src/core/matches/enums/matches.enum';
+import { MatchStatus } from '../../matches/enums/matches.enum';
 import { In, Repository } from 'typeorm';
 import { Match } from 'src/core/matches/entities/match.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -19,8 +19,28 @@ function isVlrCompletedMatch(
 }
 
 /**
- * Service responsible for all Valorant game-related logic,
- * including fetching match data, managing teams, and calculating Elo ratings.
+ * Service for managing odds.
+ *
+ * @description The workflow for creating odds is as follows:
+ *
+ * 1. Fetch Upcoming Matches:
+ *    - A scheduled cron job periodically fetches all upcoming matches from an external API.
+ *
+ * 2. Scrape Match Data:
+ *    - For each new match, the service scrapes the corresponding match page from a data source (e.g., vlr.gg).
+ *
+ * 3. Gather and Store Team Information:
+ *    - Extracts and stores all relevant information about the two competing teams, including player statistics and recent performance.
+ *
+ * 4. Elo-based Odds Calculation:
+ *    - An `EloService` calculates the Elo ratings for each team.
+ *    - This service analyzes the historical performance of each team against their past opponents.
+ *    - The initial odds for the match are generated based on these Elo ratings.
+ *
+ * 5. Create and Store Odds:
+ *    - The calculated odds are then stored in the database and associated with the corresponding match.
+ *
+ * @requires EloService - This service is a dependency for handling Elo rating calculations.
  */
 @Injectable()
 export class ValorantService implements OnApplicationBootstrap {

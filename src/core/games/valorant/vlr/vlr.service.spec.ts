@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { VlrService } from './vlr.service';
+import { VlrCompletedMatch } from './vlr.d';
 
 describe('VlrService', () => {
   let service: VlrService;
@@ -38,21 +39,19 @@ describe('VlrService', () => {
 
   describe('getMatchById', () => {
     it('should return match details for a given id', async () => {
-      // Using a real, but old, match ID to ensure the test is stable.
-      const matchId = '488321';
-      const match = await service.getMatchById(matchId);
+      const match = (await service.getMatchById('239202')) as VlrCompletedMatch;
 
       expect(match).toBeDefined();
-      expect(match.event.name).toBe(
-        'Challengers 2025: MENA Resilience North Africa and Levant Split 2 Group Stage: Week 2',
-      );
-      expect(match.team1.name).toBe('BAAM Esports');
-      expect(match.team2.name).toBe('GnG Esports');
-      expect(match.maps).toBeDefined();
+      expect(match.id).toBe('239202');
+      expect(match.status).toBe('final');
+      expect(match.team1.name).toBe('Team Heretics');
+      expect(match.team1.score).toBe(2);
+      expect(match.team2.name).toBe('Gentle Mates');
+      expect(match.team2.score).toBe(1);
       expect(match.maps.length).toBeGreaterThan(0);
       expect(match.maps[0].name).toBe('Split');
-      expect(match.maps[0].team1Score).toBe('16');
-      expect(match.maps[0].team2Score).toBe('14');
+      expect(match.maps[0].team1Score).toBe(16);
+      expect(match.maps[0].team2Score).toBe(14);
     }, 30000);
   });
 
